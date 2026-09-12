@@ -7,6 +7,10 @@ const emptyState = document.querySelector('#empty-state');
 const deepReadPanel = document.querySelector('#deep-read');
 const deepReadDomain = document.querySelector('#deep-read-domain');
 const deepReadContent = document.querySelector('#deep-read-content');
+const explorerForm = document.querySelector('#web-explorer-form');
+const explorerInput = document.querySelector('#web-page-url');
+const scrapePageButton = document.querySelector('#scrape-page');
+const explorerResult = document.querySelector('#explorer-result');
 
 let loadedArticles = [];
 
@@ -205,5 +209,86 @@ async function runDeepRead(article, button) {
   }
 }
 
+function showExplorerMessage(titleText, detailText, type = '') {
+  explorerResult.hidden = false;
+  explorerResult.className = `explorer-result ${type}`.trim();
+
+  const title = document.createElement('h3');
+  title.textContent = titleText;
+
+  const detail = document.createElement('p');
+  detail.textContent = detailText;
+
+  explorerResult.replaceChildren(title, detail);
+}
+
+function showExplorerPage(result) {
+  explorerResult.hidden = false;
+  explorerResult.className = 'explorer-result success';
+
+  const meta = document.createElement('p');
+  meta.className = 'explorer-domain';
+  meta.textContent = result.domain;
+
+  const title = document.createElement('h3');
+  title.textContent = result.title;
+
+  const url = document.createElement('p');
+  url.className = 'explorer-url';
+  url.textContent = result.url;
+
+  const description = document.createElement('p');
+  description.className = 'explorer-description';
+  description.textContent = result.description || 'No page description was provided.';
+
+  const content = document.createElement('p');
+  content.className = 'explorer-content';
+  content.textContent = result.content || 'No readable page content was returned.';
+
+  const link = document.createElement('a');
+  link.href = result.url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = 'Open Original Page ↗';
+
+  explorerResult.replaceChildren(meta, title, url, description, content, link);
+}
+
+async function exploreWebPage(event) {
+  event.preventDefault();
+  const requestedUrl = explorerInput.value.trim();
+
+  if (!requestedUrl) {
+    showExplorerMessage('Enter a webpage URL', 'Paste one public http:// or https:// URL, then try again.', 'error');
+    explorerInput.focus();
+    return;
+  }
+
+  scrapePageButton.disabled = true;
+  scrapePageButton.textContent = 'Scraping…';
+  showExplorerMessage('Retrieving webpage…', `Firecrawl is reading ${requestedUrl}`, 'loading');
+
+  try {
+    const response = await fetch('/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: requestedUrl })
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      throw new Error(payload.error || 'Firecrawl could not retrieve this webpage.');
+    }
+
+    showExplorerPage(payload.page);
+  } catch (error) {
+    showExplorerMessage('Web Explorer could not finish', `${error.message} Please check the URL and try again.`, 'error');
+  } finally {
+    scrapePageButton.disabled = false;
+    scrapePageButton.textContent = 'Scrape Page';
+  }
+}
+
 loadButton.addEventListener('click', loadLatestNews);
 filterInput.addEventListener('input', applyFilter);
+explorerForm.addEventListener('submit', exploreWebPage);

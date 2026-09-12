@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Current AI stories from WIRED, TechCrunch, and VentureBeat, with focused Deep Reads.">
+    <meta name="description" content="Current AI stories, focused Deep Reads, and one-page web exploration with Firecrawl.">
     <title>AI News Briefing</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
@@ -57,17 +57,36 @@
         <div class="empty-state" id="empty-state" hidden>No matching stories. Clear the filter to restore the loaded set.</div>
       </section>
 
+      <section class="web-explorer" aria-labelledby="explorer-title">
+        <div class="section-heading">
+          <div><p class="section-number">02</p><h2 id="explorer-title">Explore Any Web Page</h2></div>
+          <p>One public page per request</p>
+        </div>
+
+        <p class="explorer-intro">Paste a public webpage URL to retrieve a clean, limited excerpt with Firecrawl—no RSS feed required.</p>
+
+        <form class="explorer-form" id="web-explorer-form" novalidate>
+          <label for="web-page-url">Public webpage URL</label>
+          <div class="explorer-controls">
+            <input id="web-page-url" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/article">
+            <button class="primary-button" id="scrape-page" type="submit">Scrape Page</button>
+          </div>
+        </form>
+
+        <div class="explorer-result" id="explorer-result" aria-live="polite" hidden></div>
+      </section>
+
       <section class="method-note" aria-labelledby="method-title">
         <p class="section-number">How it works</p>
         <h2 id="method-title">Discovery first. Retrieval when you need it.</h2>
         <div class="method-grid">
           <article><strong>RSS</strong><p>Tells the app what each publisher recently posted.</p></article>
           <span aria-hidden="true">→</span>
-          <article><strong>Firecrawl</strong><p>Reads one selected article and returns a clean excerpt.</p></article>
+          <article><strong>Firecrawl</strong><p>Reads one selected article or user-entered webpage and returns a clean excerpt.</p></article>
         </div>
       </section>
     </main>
 
-    <footer><span>AI News Briefing</span><span>Phase 1 · Multi-RSS + Deep Read</span></footer>
+    <footer><span>AI News Briefing</span><span>Phase 2 · Web Explorer</span></footer>
   </body>
 </html>
