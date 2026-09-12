@@ -36,3 +36,18 @@ test('Phase 3 formats excerpts safely and shortens display URLs', async () => {
   assert.match(css, /@media \(max-width: 420px\)/);
   assert.match(css, /:focus-visible/);
 });
+
+test('Phase 4 adds one Job Scout comparison panel below Web Explorer', async () => {
+  const html = await readFile(new URL('index.html', root), 'utf8');
+  const script = await readFile(new URL('script.js', root), 'utf8');
+  const css = await readFile(new URL('style.css', root), 'utf8');
+
+  assert.ok(html.indexOf('id="job-scout-form"') > html.indexOf('id="web-explorer-form"'));
+  assert.equal((html.match(/class="job-source-input"/g) || []).length, 5);
+  assert.match(html, /Top 5 Junior Opportunities/);
+  assert.match(script, /fetch\('\/api\/jobs\/scan'/);
+  assert.match(script, /Open Job Posting/);
+  assert.doesNotMatch(script, /FIRECRAWL_API_KEY/);
+  assert.doesNotMatch(script, /innerHTML/);
+  assert.match(css, /\.job-card/);
+});

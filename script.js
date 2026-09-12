@@ -11,6 +11,15 @@ const explorerForm = document.querySelector('#web-explorer-form');
 const explorerInput = document.querySelector('#web-page-url');
 const scrapePageButton = document.querySelector('#scrape-page');
 const explorerResult = document.querySelector('#explorer-result');
+const jobScoutForm = document.querySelector('#job-scout-form');
+const jobSourceInputs = [...document.querySelectorAll('.job-source-input')];
+const scanJobsButton = document.querySelector('#scan-jobs');
+const clearJobsButton = document.querySelector('#clear-jobs');
+const jobSourceStatuses = document.querySelector('#job-source-statuses');
+const jobResults = document.querySelector('#job-results');
+const jobResultCount = document.querySelector('#job-result-count');
+const jobResultMessage = document.querySelector('#job-result-message');
+const jobCardList = document.querySelector('#job-card-list');
 
 let loadedArticles = [];
 
@@ -406,6 +415,166 @@ async function exploreWebPage(event) {
   }
 }
 
+function getJobUrls() {
+  return jobSourceInputs.map((input) => input.value.trim()).filter(Boolean);
+}
+
+function sourceStatusLabel(status) {
+  return {
+    waiting: 'Waiting',
+    scanning: 'Scanning',
+    extracted: 'Extracted',
+    no_jobs_found: 'No jobs found',
+    could_not_extract: 'Could not extract'
+  }[status] || 'Waiting';
+}
+
+function renderSourceStatuses(sources, initialStatus = 'waiting') {
+  const rows = sources.map((source, index) => {
+    const status = source.status || initialStatus;
+    const row = document.createElement('div');
+    row.className = `source-status source-status-${status}`;
+
+    const identity = document.createElement('div');
+    const number = document.createElement('strong');
+    number.textContent = `Source ${index + 1}`;
+    const domain = document.createElement('span');
+    domain.textContent = source.domain || formatDisplayUrl(source.url);
+    identity.append(number, domain);
+
+    const state = document.createElement('span');
+    state.className = 'source-state';
+    state.textContent = sourceStatusLabel(status);
+
+    const message = document.createElement('p');
+    message.textContent = source.message || (status === 'scanning' ? 'Firecrawl is checking this page…' : 'Ready to scan.');
+    row.append(identity, state, message);
+    return row;
+  });
+
+  jobSourceStatuses.replaceChildren(...rows);
+}
+
+function createJobCard(job) {
+  const card = document.createElement('article');
+  card.className = 'job-card';
+
+  const rank = document.createElement('span');
+  rank.className = 'job-rank';
+  rank.textContent = `#${job.rank}`;
+
+  const heading = document.createElement('div');
+  heading.className = 'job-card-heading';
+  const title = document.createElement('h4');
+  title.textContent = job.title;
+  const employer = document.createElement('p');
+  employer.textContent = job.employer || 'Employer not listed';
+  heading.append(title, employer);
+
+  const meta = document.createElement('div');
+  meta.className = 'job-meta';
+  [
+    `🌐 ${job.sourceDomain}`,
+    job.location ? `📍 ${job.location}` : '',
+    job.employmentType ? `⏱ ${job.employmentType}` : '',
+    job.postedDate ? `📅 ${job.postedDate}` : ''
+  ].filter(Boolean).forEach((value) => {
+    const chip = document.createElement('span');
+    chip.textContent = value;
+    meta.append(chip);
+  });
+
+  const reasons = document.createElement('ul');
+  reasons.className = 'job-reasons';
+  job.reasons.slice(0, 3).forEach((reason) => {
+    const item = document.createElement('li');
+    const label = document.createElement('strong');
+    label.textContent = `${reason.heading}: `;
+    item.append(label, document.createTextNode(reason.text));
+    reasons.append(item);
+  });
+
+  const link = document.createElement('a');
+  link.className = 'result-action';
+  link.href = job.jobUrl || job.sourceUrl;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = job.jobUrl ? 'Open Job Posting ↗' : 'Open Source Page ↗';
+
+  card.append(rank, heading, meta, reasons, link);
+  return card;
+}
+
+function showJobResults(jobs, message = '', type = '') {
+  jobResults.hidden = false;
+  jobResults.className = `job-results ${type}`.trim();
+  jobResultCount.textContent = `${jobs.length} ${jobs.length === 1 ? 'role' : 'roles'} recommended`;
+  jobResultMessage.textContent = message;
+  jobResultMessage.hidden = !message;
+  jobCardList.replaceChildren(...jobs.map(createJobCard));
+  jobResults.tabIndex = -1;
+  jobResults.focus({ preventScroll: true });
+}
+
+function clearJobScout() {
+  jobScoutForm.reset();
+  jobSourceInputs.forEach((input) => input.removeAttribute('aria-invalid'));
+  jobSourceStatuses.replaceChildren();
+  jobCardList.replaceChildren();
+  jobResults.hidden = true;
+  jobResultMessage.textContent = '';
+  jobSourceInputs[0].focus();
+}
+
+async function scanJobs(event) {
+  event.preventDefault();
+  const urls = getJobUrls();
+
+  if (!urls.length) {
+    jobSourceInputs[0].setAttribute('aria-invalid', 'true');
+    showJobResults([], 'Enter at least one public http:// or https:// job-listing URL.', 'error');
+    jobSourceInputs[0].focus();
+    return;
+  }
+
+  jobSourceInputs.forEach((input) => input.removeAttribute('aria-invalid'));
+  renderSourceStatuses(urls.map((url) => ({ url, status: 'scanning' })), 'scanning');
+  showJobResults([], 'Comparing visible jobs across the supplied pages…', 'loading');
+  jobResults.setAttribute('aria-busy', 'true');
+  jobSourceInputs.forEach((input) => { input.disabled = true; });
+  scanJobsButton.disabled = true;
+  scanJobsButton.textContent = 'Scanning sources…';
+  clearJobsButton.disabled = true;
+
+  try {
+    const response = await fetch('/api/jobs/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls })
+    });
+    const payload = await readJsonResponse(response, 'The Job Scout service returned an unreadable response.');
+
+    if (Array.isArray(payload.sources)) renderSourceStatuses(payload.sources);
+    if (!response.ok) throw new Error(payload.error || 'The supplied pages could not be scanned.');
+
+    const partialFailures = payload.sources?.filter((source) => source.status === 'could_not_extract').length || 0;
+    const message = payload.jobs.length
+      ? (partialFailures ? `${partialFailures} source ${partialFailures === 1 ? 'was' : 'were'} skipped; recommendations use the successful pages.` : '')
+      : 'No usable junior job listings were found on the supplied pages.';
+    showJobResults(payload.jobs, message, partialFailures ? 'warning' : 'success');
+  } catch (error) {
+    showJobResults([], error.message, 'error');
+  } finally {
+    jobResults.setAttribute('aria-busy', 'false');
+    jobSourceInputs.forEach((input) => { input.disabled = false; });
+    scanJobsButton.disabled = false;
+    scanJobsButton.textContent = 'Find Junior Opportunities';
+    clearJobsButton.disabled = false;
+  }
+}
+
 loadButton.addEventListener('click', loadLatestNews);
 filterInput.addEventListener('input', applyFilter);
 explorerForm.addEventListener('submit', exploreWebPage);
+jobScoutForm.addEventListener('submit', scanJobs);
+clearJobsButton.addEventListener('click', clearJobScout);

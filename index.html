@@ -77,6 +77,41 @@
         <div class="explorer-result" id="explorer-result" aria-live="polite" hidden></div>
       </section>
 
+      <section class="job-scout" aria-labelledby="job-scout-title">
+        <div class="section-heading">
+          <div><p class="section-number">03 · FIRECRAWL</p><h2 id="job-scout-title"><span aria-hidden="true">🧭</span> Junior Job Scout</h2></div>
+          <p>Compare 1–5 public sources</p>
+        </div>
+
+        <p class="explorer-intro" id="job-scout-help">Paste up to 5 public job-listing pages. We will compare visible roles and surface promising early-career opportunities.</p>
+
+        <form class="job-scout-form" id="job-scout-form" novalidate>
+          <div class="job-source-fields">
+            <label>Job Source 1 URL <span>Required</span><input class="job-source-input" name="job-source-1" type="url" inputmode="url" autocomplete="url" aria-describedby="job-scout-help" placeholder="https://publicjobs.example/jobs" required></label>
+            <label>Job Source 2 URL <span>Optional</span><input class="job-source-input" name="job-source-2" type="url" inputmode="url" autocomplete="url" placeholder="https://another-public-source.example/jobs"></label>
+            <label>Job Source 3 URL <span>Optional</span><input class="job-source-input" name="job-source-3" type="url" inputmode="url" autocomplete="url" placeholder="https://…"></label>
+            <label>Job Source 4 URL <span>Optional</span><input class="job-source-input" name="job-source-4" type="url" inputmode="url" autocomplete="url" placeholder="https://…"></label>
+            <label>Job Source 5 URL <span>Optional</span><input class="job-source-input" name="job-source-5" type="url" inputmode="url" autocomplete="url" placeholder="https://…"></label>
+          </div>
+
+          <div class="job-scout-actions">
+            <button class="primary-button" id="scan-jobs" type="submit">Find Junior Opportunities</button>
+            <button class="secondary-button" id="clear-jobs" type="button">Clear Results</button>
+          </div>
+        </form>
+
+        <div class="source-status-list" id="job-source-statuses" aria-live="polite"></div>
+
+        <section class="job-results" id="job-results" aria-labelledby="job-results-title" aria-live="polite" hidden>
+          <div class="job-results-heading">
+            <div><p class="section-number">Ranked comparison</p><h3 id="job-results-title">Top 5 Junior Opportunities</h3></div>
+            <p id="job-result-count"></p>
+          </div>
+          <div class="job-result-message" id="job-result-message"></div>
+          <div class="job-card-list" id="job-card-list"></div>
+        </section>
+      </section>
+
       <section class="method-note" aria-labelledby="method-title">
         <p class="section-number">How it works</p>
         <h2 id="method-title">Discovery first. Retrieval when you need it.</h2>
@@ -88,6 +123,6 @@
       </section>
     </main>
 
-    <footer><span>AI News Briefing</span><span>Phase 3 · Responsive + reliable</span></footer>
+    <footer><span>AI News Briefing</span><span>Phase 4 · Junior Job Scout</span></footer>
   </body>
 </html>

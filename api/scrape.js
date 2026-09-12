@@ -22,6 +22,27 @@ function validateWebUrl(value) {
     throw new Error('URLs containing usernames or passwords are not allowed.');
   }
 
+  const hostname = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const privateHostname = hostname === 'localhost'
+    || hostname.endsWith('.localhost')
+    || hostname.endsWith('.local')
+    || hostname.endsWith('.internal')
+    || hostname === '0.0.0.0'
+    || hostname === '::'
+    || hostname === '::1'
+    || /^127\./.test(hostname)
+    || /^10\./.test(hostname)
+    || /^192\.168\./.test(hostname)
+    || /^169\.254\./.test(hostname)
+    || /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+    || /^fc[0-9a-f]{2}:/i.test(hostname)
+    || /^fd[0-9a-f]{2}:/i.test(hostname)
+    || /^fe[89ab][0-9a-f]:/i.test(hostname);
+
+  if (privateHostname) {
+    throw new Error('Local, private-network, and internal URLs are not allowed.');
+  }
+
   return url;
 }
 

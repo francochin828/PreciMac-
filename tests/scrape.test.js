@@ -98,6 +98,16 @@ test('rejects non-web URL schemes before calling Firecrawl', async () => {
   assert.match(payload.error, /http:\/\/ and https:\/\//);
 });
 
+test('rejects local and private-network URLs before calling Firecrawl', async () => {
+  delete process.env.FIRECRAWL_API_KEY;
+  for (const url of ['http://localhost/page', 'http://127.0.0.1/page', 'http://10.0.0.2/page', 'http://[::1]/page']) {
+    const response = await POST(scrapeRequest({ url }));
+    const payload = await response.json();
+    assert.equal(response.status, 400);
+    assert.match(payload.error, /private-network|internal/);
+  }
+});
+
 test('returns a readable error when the server-side key is missing', async () => {
   delete process.env.FIRECRAWL_API_KEY;
   const response = await POST(scrapeRequest({ url: 'https://example.com/article' }));
