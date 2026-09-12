@@ -10,9 +10,10 @@
     <script src="script.js" defer></script>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="site-header">
       <div class="header-inner">
-        <a class="brand" href="#top" aria-label="AI News Briefing home">
+        <a class="brand" href="#main-content" aria-label="AI News Briefing home">
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
           <span>AI News Briefing</span>
         </a>
@@ -20,7 +21,7 @@
       </div>
     </header>
 
-    <main id="top">
+    <main id="main-content" tabindex="-1">
       <section class="intro" aria-labelledby="page-title">
         <p class="eyebrow">RSS discovery + Firecrawl extraction</p>
         <h1 id="page-title">Follow the signal,<br><em>skip the noise.</em></h1>
@@ -59,17 +60,17 @@
 
       <section class="web-explorer" aria-labelledby="explorer-title">
         <div class="section-heading">
-          <div><p class="section-number">02</p><h2 id="explorer-title">Explore Any Web Page</h2></div>
+          <div><p class="section-number">02 · FIRECRAWL</p><h2 id="explorer-title"><span aria-hidden="true">🌐</span> Explore Any Web Page</h2></div>
           <p>One public page per request</p>
         </div>
 
-        <p class="explorer-intro">Paste a public webpage URL to retrieve a clean, limited excerpt with Firecrawl—no RSS feed required.</p>
+        <p class="explorer-intro" id="web-page-help">Paste a public webpage URL to retrieve a clean, limited excerpt with Firecrawl—no RSS feed required.</p>
 
         <form class="explorer-form" id="web-explorer-form" novalidate>
           <label for="web-page-url">Public webpage URL</label>
           <div class="explorer-controls">
-            <input id="web-page-url" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/article">
-            <button class="primary-button" id="scrape-page" type="submit">Scrape Page</button>
+            <input id="web-page-url" name="url" type="url" inputmode="url" autocomplete="url" aria-describedby="web-page-help" placeholder="https://example.com/article">
+            <button class="primary-button" id="scrape-page" type="submit">✨ Scrape Page</button>
           </div>
         </form>
 
@@ -87,6 +88,6 @@
       </section>
     </main>
 
-    <footer><span>AI News Briefing</span><span>Phase 2 · Web Explorer</span></footer>
+    <footer><span>AI News Briefing</span><span>Phase 3 · Responsive + reliable</span></footer>
   </body>
 </html>

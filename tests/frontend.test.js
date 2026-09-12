@@ -23,3 +23,16 @@ test('Web Explorer reuses the scrape route and keeps the secret server-side', as
   assert.doesNotMatch(script, /FIRECRAWL_API_KEY/);
   assert.match(script, /Open Original Page/);
 });
+
+test('Phase 3 formats excerpts safely and shortens display URLs', async () => {
+  const script = await readFile(new URL('script.js', root), 'utf8');
+  const css = await readFile(new URL('style.css', root), 'utf8');
+
+  assert.match(script, /function renderExcerpt/);
+  assert.match(script, /function formatDisplayUrl/);
+  assert.doesNotMatch(script, /innerHTML/);
+  assert.match(script, /Some sources need attention/);
+  assert.match(css, /\.rich-content/);
+  assert.match(css, /@media \(max-width: 420px\)/);
+  assert.match(css, /:focus-visible/);
+});

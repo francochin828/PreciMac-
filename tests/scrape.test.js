@@ -60,6 +60,35 @@ test('stops before embedded podcast-player controls', () => {
   assert.equal(cleanExcerpt(markdown), '# Useful article\n\nThe readable article begins here.');
 });
 
+test('removes shopping-page chrome and stray extraction slashes', () => {
+  const markdown = [
+    '# Beauty Offers',
+    'Available while supplies last.',
+    '- \\\\',
+    '\\\\',
+    'Quicklook\\',
+    'Hydrating Face Cream\\',
+    '**$39.00** \\'
+  ].join('\n');
+
+  assert.equal(
+    cleanExcerpt(markdown),
+    '# Beauty Offers\n\nAvailable while supplies last.\n\nHydrating Face Cream\n\n**$39.00**'
+  );
+});
+
+test('stops before expandable and related-content footers', () => {
+  const markdown = [
+    '# Useful page',
+    'The useful content.',
+    'Show more',
+    '## Related Content:',
+    'Unrelated links'
+  ].join('\n\n');
+
+  assert.equal(cleanExcerpt(markdown), '# Useful page\n\nThe useful content.');
+});
+
 test('rejects non-web URL schemes before calling Firecrawl', async () => {
   delete process.env.FIRECRAWL_API_KEY;
   const response = await POST(scrapeRequest({ url: 'file:///private/example' }));

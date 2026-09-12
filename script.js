@@ -14,6 +14,79 @@ const explorerResult = document.querySelector('#explorer-result');
 
 let loadedArticles = [];
 
+async function readJsonResponse(response, fallbackMessage) {
+  try {
+    return await response.json();
+  } catch {
+    throw new Error(fallbackMessage);
+  }
+}
+
+function formatDisplayUrl(value) {
+  try {
+    const url = new URL(value);
+    const domain = url.hostname.replace(/^www\./, '');
+    const path = url.pathname === '/' ? '' : url.pathname.replace(/\/$/, '');
+    const displayValue = `${domain}${path}`;
+    return displayValue.length > 76 ? `${displayValue.slice(0, 73)}…` : displayValue;
+  } catch {
+    return value;
+  }
+}
+
+function appendInlineFormatting(element, value) {
+  const text = value.replace(/\\([\\`*_{}\[\]()#+\-.!])/g, '$1');
+  const parts = text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+
+  parts.forEach((part) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      const strong = document.createElement('strong');
+      strong.textContent = part.slice(2, -2);
+      element.append(strong);
+    } else {
+      element.append(document.createTextNode(part));
+    }
+  });
+}
+
+function renderExcerpt(container, markdown) {
+  container.replaceChildren();
+  const lines = String(markdown || '')
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  let activeList = null;
+
+  lines.forEach((line) => {
+    const headingMatch = line.match(/^#{1,6}\s+(.+)/);
+    const listMatch = line.match(/^[-*]\s+(.+)/);
+
+    if (headingMatch) {
+      activeList = null;
+      const heading = document.createElement('h5');
+      appendInlineFormatting(heading, headingMatch[1]);
+      container.append(heading);
+      return;
+    }
+
+    if (listMatch) {
+      if (!activeList) {
+        activeList = document.createElement('ul');
+        container.append(activeList);
+      }
+      const item = document.createElement('li');
+      appendInlineFormatting(item, listMatch[1]);
+      activeList.append(item);
+      return;
+    }
+
+    activeList = null;
+    const paragraph = document.createElement('p');
+    appendInlineFormatting(paragraph, line);
+    container.append(paragraph);
+  });
+}
+
 function setNewsStatus(message, type = '') {
   newsStatus.textContent = message;
   newsStatus.className = `status-message ${type}`.trim();
@@ -67,7 +140,7 @@ function createArticleCard(article) {
   const deepReadButton = document.createElement('button');
   deepReadButton.className = 'deep-read-button';
   deepReadButton.type = 'button';
-  deepReadButton.textContent = 'Deep Read';
+  deepReadButton.textContent = '🔎 Deep Read';
   deepReadButton.addEventListener('click', () => runDeepRead(article, deepReadButton));
 
   actions.append(originalLink, deepReadButton);
@@ -78,7 +151,7 @@ function createArticleCard(article) {
 function renderArticles(articles) {
   articleList.replaceChildren(...articles.map(createArticleCard));
   articleCount.textContent = `${articles.length} ${articles.length === 1 ? 'story' : 'stories'}`;
-  emptyState.hidden = articles.length !== 0;
+  emptyState.hidden = articles.length !== 0 || loadedArticles.length === 0;
 }
 
 function applyFilter() {
@@ -100,7 +173,7 @@ async function loadLatestNews() {
 
   try {
     const response = await fetch('/api/news');
-    const payload = await response.json();
+    const payload = await readJsonResponse(response, 'The news service returned an unreadable response.');
 
     if (!response.ok) {
       throw new Error(payload.error || 'The news feeds could not be loaded.');
@@ -112,13 +185,14 @@ async function loadLatestNews() {
     renderArticles(loadedArticles);
 
     if (payload.warnings?.length) {
-      setNewsStatus(`Loaded ${loadedArticles.length} stories. ${payload.warnings.join(' ')}`, 'error');
+      setNewsStatus(`Loaded ${loadedArticles.length} stories. Some sources need attention: ${payload.warnings.join(' ')}`, 'warning');
     } else {
       setNewsStatus(`Loaded ${loadedArticles.length} current stories from all three RSS feeds.`, 'success');
     }
   } catch (error) {
     loadedArticles = [];
     renderArticles([]);
+    emptyState.hidden = true;
     setNewsStatus(`${error.message} Please try again.`, 'error');
   } finally {
     loadButton.disabled = false;
@@ -128,7 +202,8 @@ async function loadLatestNews() {
 
 function showDeepReadLoading(article) {
   deepReadPanel.hidden = false;
-  deepReadDomain.textContent = article.source;
+  deepReadPanel.setAttribute('aria-busy', 'true');
+  deepReadDomain.textContent = `🌐 ${article.source}`;
   deepReadContent.replaceChildren();
 
   const loading = document.createElement('p');
@@ -139,7 +214,9 @@ function showDeepReadLoading(article) {
 }
 
 function showDeepReadResult(result) {
-  deepReadDomain.textContent = result.domain;
+  deepReadPanel.setAttribute('aria-busy', 'false');
+  deepReadDomain.textContent = `🌐 ${result.domain}`;
+  const contentText = result.content || '';
 
   const body = document.createElement('div');
   body.className = 'deep-read-body';
@@ -148,24 +225,32 @@ function showDeepReadResult(result) {
   title.textContent = result.title;
 
   const description = document.createElement('p');
-  description.textContent = result.description || result.content;
+  description.className = 'result-description';
+  description.textContent = result.description || 'A clean excerpt retrieved from the original page.';
 
-  const content = document.createElement('p');
-  content.textContent = result.description ? result.content : '';
+  const stats = document.createElement('p');
+  stats.className = 'result-stats';
+  stats.textContent = `📄 ${contentText.length.toLocaleString()} character excerpt`;
+
+  const content = document.createElement('div');
+  content.className = 'rich-content rich-content-dark';
+  renderExcerpt(content, contentText || 'No readable page content was returned.');
 
   const link = document.createElement('a');
   link.href = result.url;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.textContent = 'Open Original Article ↗';
+  link.className = 'result-action result-action-dark';
+  link.textContent = `Open ${formatDisplayUrl(result.url)} ↗`;
 
-  body.append(title, description);
-  if (content.textContent) body.append(content);
-  body.append(link);
+  body.append(title, description, stats, content, link);
   deepReadContent.replaceChildren(body);
+  deepReadPanel.tabIndex = -1;
+  deepReadPanel.focus({ preventScroll: true });
 }
 
 function showDeepReadError(message) {
+  deepReadPanel.setAttribute('aria-busy', 'false');
   const error = document.createElement('div');
   error.className = 'deep-read-body';
 
@@ -177,6 +262,8 @@ function showDeepReadError(message) {
 
   error.append(title, detail);
   deepReadContent.replaceChildren(error);
+  deepReadPanel.tabIndex = -1;
+  deepReadPanel.focus({ preventScroll: true });
 }
 
 async function runDeepRead(article, button) {
@@ -192,7 +279,7 @@ async function runDeepRead(article, button) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: article.url })
     });
-    const payload = await response.json();
+    const payload = await readJsonResponse(response, 'The Deep Read service returned an unreadable response.');
 
     if (!response.ok) {
       throw new Error(payload.error || 'Firecrawl could not retrieve this article.');
@@ -204,7 +291,7 @@ async function runDeepRead(article, button) {
   } finally {
     document.querySelectorAll('.deep-read-button').forEach((item) => {
       item.disabled = false;
-      item.textContent = 'Deep Read';
+      item.textContent = '🔎 Deep Read';
     });
   }
 }
@@ -212,6 +299,8 @@ async function runDeepRead(article, button) {
 function showExplorerMessage(titleText, detailText, type = '') {
   explorerResult.hidden = false;
   explorerResult.className = `explorer-result ${type}`.trim();
+  explorerResult.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  explorerResult.setAttribute('aria-busy', type === 'loading' ? 'true' : 'false');
 
   const title = document.createElement('h3');
   title.textContent = titleText;
@@ -220,38 +309,61 @@ function showExplorerMessage(titleText, detailText, type = '') {
   detail.textContent = detailText;
 
   explorerResult.replaceChildren(title, detail);
+  if (type === 'error') {
+    explorerResult.tabIndex = -1;
+    explorerResult.focus({ preventScroll: true });
+  }
 }
 
 function showExplorerPage(result) {
   explorerResult.hidden = false;
   explorerResult.className = 'explorer-result success';
+  explorerResult.setAttribute('role', 'status');
+  explorerResult.setAttribute('aria-busy', 'false');
+  const contentText = result.content || '';
 
-  const meta = document.createElement('p');
-  meta.className = 'explorer-domain';
-  meta.textContent = result.domain;
+  const meta = document.createElement('div');
+  meta.className = 'result-meta';
+
+  const domain = document.createElement('span');
+  domain.textContent = `🌐 ${result.domain}`;
+
+  const stats = document.createElement('span');
+  stats.textContent = `📄 ${contentText.length.toLocaleString()} character excerpt`;
+  meta.append(domain, stats);
 
   const title = document.createElement('h3');
   title.textContent = result.title;
 
-  const url = document.createElement('p');
-  url.className = 'explorer-url';
-  url.textContent = result.url;
+  const url = document.createElement('a');
+  url.className = 'result-url-link';
+  url.href = result.url;
+  url.target = '_blank';
+  url.rel = 'noopener noreferrer';
+  url.textContent = `🔗 ${formatDisplayUrl(result.url)}`;
 
   const description = document.createElement('p');
   description.className = 'explorer-description';
   description.textContent = result.description || 'No page description was provided.';
 
-  const content = document.createElement('p');
-  content.className = 'explorer-content';
-  content.textContent = result.content || 'No readable page content was returned.';
+  const excerptLabel = document.createElement('p');
+  excerptLabel.className = 'result-kicker';
+  excerptLabel.textContent = 'Clean page excerpt';
+
+  const content = document.createElement('div');
+  content.className = 'rich-content';
+  renderExcerpt(content, contentText || 'No readable page content was returned.');
 
   const link = document.createElement('a');
   link.href = result.url;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
+  link.className = 'result-action';
   link.textContent = 'Open Original Page ↗';
 
-  explorerResult.replaceChildren(meta, title, url, description, content, link);
+  explorerResult.replaceChildren(meta, title, url, description, excerptLabel, content, link);
+  explorerResult.tabIndex = -1;
+  explorerResult.focus({ preventScroll: true });
 }
 
 async function exploreWebPage(event) {
@@ -259,11 +371,14 @@ async function exploreWebPage(event) {
   const requestedUrl = explorerInput.value.trim();
 
   if (!requestedUrl) {
+    explorerInput.setAttribute('aria-invalid', 'true');
     showExplorerMessage('Enter a webpage URL', 'Paste one public http:// or https:// URL, then try again.', 'error');
     explorerInput.focus();
     return;
   }
 
+  explorerInput.removeAttribute('aria-invalid');
+  explorerInput.disabled = true;
   scrapePageButton.disabled = true;
   scrapePageButton.textContent = 'Scraping…';
   showExplorerMessage('Retrieving webpage…', `Firecrawl is reading ${requestedUrl}`, 'loading');
@@ -274,7 +389,7 @@ async function exploreWebPage(event) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: requestedUrl })
     });
-    const payload = await response.json();
+    const payload = await readJsonResponse(response, 'The Web Explorer service returned an unreadable response.');
 
     if (!response.ok) {
       throw new Error(payload.error || 'Firecrawl could not retrieve this webpage.');
@@ -282,10 +397,12 @@ async function exploreWebPage(event) {
 
     showExplorerPage(payload.page);
   } catch (error) {
+    explorerInput.setAttribute('aria-invalid', 'true');
     showExplorerMessage('Web Explorer could not finish', `${error.message} Please check the URL and try again.`, 'error');
   } finally {
+    explorerInput.disabled = false;
     scrapePageButton.disabled = false;
-    scrapePageButton.textContent = 'Scrape Page';
+    scrapePageButton.textContent = '✨ Scrape Page';
   }
 }
 

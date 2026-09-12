@@ -33,13 +33,15 @@ function readableFirecrawlError(status, payload) {
 
 function cleanExcerpt(markdown) {
   const boilerplate = /^(checking your browser|verifying|stuck\?|success!?$|verification (failed|expired)|refresh$|troubleshoot$|cloudflare|privacy\s*[•|]|close$|skip to content|share on |share over email|copy share link|image credits:)/i;
-  const stopContent = /^(#{1,3}\s*)?(most popular|topics|related stories)$|^_?when you purchase|^loading the next article|^recaptcha|\|\s*[^|]{0,60}podcast$|^\d+\s+seconds? of \d+\s+minutes?/i;
+  const pageChrome = /^(quicklook|sign in|create account|enable accessibility|open accessibility menu)$/i;
+  const stopContent = /^(#{1,3}\s*)?(most popular|topics|related stories|related content:?|you may also like)$|^show (more|less)$|^_?when you purchase|^loading the next article|^recaptcha|\|\s*[^|]{0,60}podcast$|^\d+\s+seconds? of \d+\s+minutes?/i;
   let lines = String(markdown || '')
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && !boilerplate.test(line));
+    .map((line) => line.trim().replace(/\\\*$/g, '').replace(/\\+$/g, '').trim())
+    .filter((line) => line && !/^[-*]?\s*\\+$/.test(line) && !/^[-*]$/.test(line))
+    .filter((line) => !boilerplate.test(line) && !pageChrome.test(line));
 
   const articleHeading = lines.findIndex((line) => /^#\s+/.test(line));
   if (articleHeading > 0) lines = lines.slice(articleHeading);
