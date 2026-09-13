@@ -1,14 +1,11 @@
 {
-  "name": "ai-news-assistant",
+  "name": "precimac",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check api/news.js && node --check api/scrape.js && node --check api/jobs/scan.js && node --check script.js",
+    "check": "node --check macro-engine.js && node --check script.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js"
-  },
-  "dependencies": {
-    "fast-xml-parser": "^5.2.5"
   },
   "engines": {
     "node": ">=20"

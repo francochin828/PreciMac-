@@ -3,126 +3,99 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Current AI stories, focused Deep Reads, and one-page web exploration with Firecrawl.">
-    <title>AI News Briefing</title>
+    <meta name="description" content="Precimac turns exact nutrition targets into meal plans and copyable grocery lists.">
+    <title>Precimac (精点) — High Precision Nutrition Engine</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
+    <script type="module" src="script.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <a class="skip-link" href="#main-content">Skip to nutrition planner</a>
     <header class="site-header">
-      <div class="header-inner">
-        <a class="brand" href="#main-content" aria-label="AI News Briefing home">
-          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span>AI News Briefing</span>
-        </a>
-        <p>Three trusted feeds. One focused view.</p>
-      </div>
+      <a class="brand" href="#main-content" aria-label="Precimac home"><span class="brand-mark" aria-hidden="true">精</span><span>Precimac <small>精点</small></span></a>
+      <p><span class="status-dot" aria-hidden="true"></span> Local-first nutrition engine</p>
     </header>
 
     <main id="main-content" tabindex="-1">
-      <section class="intro" aria-labelledby="page-title">
-        <p class="eyebrow">RSS discovery + Firecrawl extraction</p>
-        <h1 id="page-title">Follow the signal,<br><em>skip the noise.</em></h1>
-        <p>Load current AI reporting from WIRED, TechCrunch, and VentureBeat. Filter locally, open the source, or retrieve a cleaner Deep Read.</p>
+      <section class="hero" aria-labelledby="page-title">
+        <div><p class="eyebrow">High precision nutrition engine</p><h1 id="page-title">Hit your numbers.<br><em>Own your prep.</em></h1><p class="hero-copy">Set exact targets, build a repeatable meal from a fast local dataset, and turn it into a shopping list in seconds.</p></div>
+        <div class="hero-readout" aria-label="Product capabilities"><span>01</span><p>Set targets</p><span>02</span><p>Build your meal</p><span>03</span><p>Copy your list</p></div>
       </section>
 
-      <section class="news-radar" aria-labelledby="radar-title">
-        <div class="section-heading">
-          <div><p class="section-number">01</p><h2 id="radar-title">News Radar</h2></div>
-          <p id="article-count">No stories loaded</p>
+      <div class="app-status" id="app-status" role="status" aria-live="polite">Loading the local ingredient dataset…</div>
+
+      <section class="panel target-panel" aria-labelledby="targets-title">
+        <div class="section-heading"><div><p class="section-number">01 / Targets</p><h2 id="targets-title">Set your macro target</h2></div><p>Daily baseline</p></div>
+        <div class="flow-switch" role="radiogroup" aria-label="Macro target method">
+          <label><input type="radio" name="target-mode" value="manual" checked><span>I know my macros</span></label>
+          <label><input type="radio" name="target-mode" value="calculate"><span>Calculate for me</span></label>
         </div>
-
-        <div class="controls">
-          <button class="primary-button" id="load-news" type="button">Load Latest News</button>
-          <label class="filter-field">
-            <span>Filter loaded stories</span>
-            <input id="story-filter" type="search" placeholder="Try “models” or “policy”" disabled>
-          </label>
-        </div>
-
-        <div class="status-message" id="news-status" role="status" aria-live="polite">
-          Select “Load Latest News” to fetch the three prepared RSS feeds.
-        </div>
-
-        <section class="deep-read" id="deep-read" aria-labelledby="deep-read-title" hidden>
-          <div class="deep-read-heading">
-            <div><p class="eyebrow">Firecrawl extraction</p><h3 id="deep-read-title">Deep Read</h3></div>
-            <span id="deep-read-domain"></span>
-          </div>
-          <div id="deep-read-content" aria-live="polite"></div>
-        </section>
-
-        <div class="article-grid" id="article-list" aria-live="polite"></div>
-        <div class="empty-state" id="empty-state" hidden>No matching stories. Clear the filter to restore the loaded set.</div>
-      </section>
-
-      <section class="web-explorer" aria-labelledby="explorer-title">
-        <div class="section-heading">
-          <div><p class="section-number">02 · FIRECRAWL</p><h2 id="explorer-title"><span aria-hidden="true">🌐</span> Explore Any Web Page</h2></div>
-          <p>One public page per request</p>
-        </div>
-
-        <p class="explorer-intro" id="web-page-help">Paste a public webpage URL to retrieve a clean, limited excerpt with Firecrawl—no RSS feed required.</p>
-
-        <form class="explorer-form" id="web-explorer-form" novalidate>
-          <label for="web-page-url">Public webpage URL</label>
-          <div class="explorer-controls">
-            <input id="web-page-url" name="url" type="url" inputmode="url" autocomplete="url" aria-describedby="web-page-help" placeholder="https://example.com/article">
-            <button class="primary-button" id="scrape-page" type="submit">✨ Scrape Page</button>
-          </div>
+        <form id="macro-form" novalidate>
+          <fieldset id="manual-fields" class="field-grid">
+            <legend class="sr-only">Manual daily macro targets</legend>
+            <label>Protein <span>grams</span><input id="manual-protein" name="protein" type="number" min="1" step="1" value="180" required></label>
+            <label>Carbs <span>grams</span><input id="manual-carbs" name="carbs" type="number" min="1" step="1" value="240" required></label>
+            <label>Fats <span>grams</span><input id="manual-fats" name="fats" type="number" min="1" step="1" value="70" required></label>
+            <label>Calories <span>kcal</span><input id="manual-calories" name="calories" type="number" min="1" step="10" value="2310" required></label>
+          </fieldset>
+          <fieldset id="calculated-fields" class="field-grid" hidden disabled>
+            <legend class="sr-only">Quick calculated daily macro targets</legend>
+            <label>Weight <span>kg</span><input id="calc-weight" name="weight" type="number" min="30" max="300" step="0.1" value="80" required></label>
+            <label>Height <span>cm</span><input id="calc-height" name="height" type="number" min="120" max="230" step="1" value="180" required></label>
+            <label>Age <span>years</span><input id="calc-age" name="age" type="number" min="16" max="100" step="1" value="30" required></label>
+            <label>Goal <span>direction</span><select id="calc-goal" name="goal"><option value="cut">Cut</option><option value="maintain" selected>Maintain</option><option value="bulk">Bulk</option></select></label>
+          </fieldset>
+          <div class="form-action-row"><button class="primary-button" type="submit">Apply targets</button><p id="target-method-note">Using the exact daily targets you enter.</p></div>
         </form>
-
-        <div class="explorer-result" id="explorer-result" aria-live="polite" hidden></div>
       </section>
 
-      <section class="job-scout" aria-labelledby="job-scout-title">
-        <div class="section-heading">
-          <div><p class="section-number">03 · FIRECRAWL</p><h2 id="job-scout-title"><span aria-hidden="true">🧭</span> Junior Job Scout</h2></div>
-          <p>Compare 1–5 public sources</p>
+      <section class="panel preferences-panel" aria-labelledby="preferences-title">
+        <div class="section-heading compact-heading"><div><p class="section-number">02 / Plan</p><h2 id="preferences-title">Choose your prep window</h2></div><p id="timeframe-summary">1 day · 4 meal servings</p></div>
+        <fieldset class="choice-group timeframe-group">
+          <legend>Timeframe</legend>
+          <label><input type="radio" name="timeframe" value="meal"><span>1 meal</span></label><label><input type="radio" name="timeframe" value="day" checked><span>1 day</span></label><label><input type="radio" name="timeframe" value="week"><span>1 week</span></label><label><input type="radio" name="timeframe" value="month"><span>1 month</span></label>
+        </fieldset>
+        <fieldset class="choice-group filter-group">
+          <legend>Dietary filters</legend>
+          <label><input type="checkbox" name="diet-filter" value="dairyFree"><span>Dairy-free</span></label><label><input type="checkbox" name="diet-filter" value="porkFree"><span>Pork-free</span></label><label><input type="checkbox" name="diet-filter" value="vegetarian"><span>Vegetarian</span></label><label><input type="checkbox" name="diet-filter" value="highProtein"><span>High protein only</span></label>
+        </fieldset>
+        <label class="custom-preference">Custom preference or prep note<input id="custom-preference" type="text" maxlength="120" placeholder="e.g. low sodium, cook rice separately"></label>
+      </section>
+
+      <section class="builder-layout" aria-labelledby="builder-title">
+        <div class="ingredient-browser">
+          <div class="section-heading"><div><p class="section-number">03 / Build</p><h2 id="builder-title">Build one repeatable meal</h2></div><p id="ingredient-count">Loading…</p></div>
+          <p class="section-intro">Each quantity is one listed serving. Your chosen meal repeats across the selected timeframe.</p>
+          <div class="ingredient-grid" id="ingredient-grid" aria-live="polite"></div>
+          <div class="empty-message" id="ingredient-empty" hidden>No ingredients match these filters.</div>
         </div>
-
-        <p class="explorer-intro" id="job-scout-help">Paste up to 5 public job-listing pages. We will compare visible roles and surface promising early-career opportunities.</p>
-
-        <form class="job-scout-form" id="job-scout-form" novalidate>
-          <div class="job-source-fields">
-            <label>Job Source 1 URL <span>Required</span><input class="job-source-input" name="job-source-1" type="url" inputmode="url" autocomplete="url" aria-describedby="job-scout-help" placeholder="https://publicjobs.example/jobs" required></label>
-            <label>Job Source 2 URL <span>Optional</span><input class="job-source-input" name="job-source-2" type="url" inputmode="url" autocomplete="url" placeholder="https://another-public-source.example/jobs"></label>
-            <label>Job Source 3 URL <span>Optional</span><input class="job-source-input" name="job-source-3" type="url" inputmode="url" autocomplete="url" placeholder="https://…"></label>
-            <label>Job Source 4 URL <span>Optional</span><input class="job-source-input" name="job-source-4" type="url" inputmode="url" autocomplete="url" placeholder="https://…"></label>
-            <label>Job Source 5 URL <span>Optional</span><input class="job-source-input" name="job-source-5" type="url" inputmode="url" autocomplete="url" placeholder="https://…"></label>
+        <aside class="plan-sidebar" aria-labelledby="current-meal-title">
+          <div class="sticky-plan">
+            <div class="plan-heading"><p class="section-number">Live plan</p><h2 id="current-meal-title">Current meal</h2></div>
+            <div id="selected-items" class="selected-items"></div><p class="empty-message" id="meal-empty">Add an ingredient to begin.</p>
+            <div class="macro-totals" aria-label="Current meal macro totals">
+              <div><span>Calories</span><strong id="total-calories">0</strong><small>kcal</small></div><div><span>Protein</span><strong id="total-protein">0</strong><small>g</small></div><div><span>Carbs</span><strong id="total-carbs">0</strong><small>g</small></div><div><span>Fats</span><strong id="total-fats">0</strong><small>g</small></div>
+            </div>
+            <div class="goal-block">
+              <div class="goal-heading"><h3>Goal indicator</h3><p id="goal-context">1 day plan</p></div>
+              <div class="goal-row"><div><span>Calories</span><output id="calories-progress-label">0 / 2310 kcal</output></div><progress id="calories-progress" max="2310" value="0"></progress></div>
+              <div class="goal-row"><div><span>Protein</span><output id="protein-progress-label">0 / 180 g</output></div><progress id="protein-progress" max="180" value="0"></progress></div>
+              <div class="goal-row"><div><span>Carbs</span><output id="carbs-progress-label">0 / 240 g</output></div><progress id="carbs-progress" max="240" value="0"></progress></div>
+              <div class="goal-row"><div><span>Fats</span><output id="fats-progress-label">0 / 70 g</output></div><progress id="fats-progress" max="70" value="0"></progress></div>
+            </div>
           </div>
-
-          <div class="job-scout-actions">
-            <button class="primary-button" id="scan-jobs" type="submit">Find Junior Opportunities</button>
-            <button class="secondary-button" id="clear-jobs" type="button">Clear Results</button>
-          </div>
-        </form>
-
-        <div class="source-status-list" id="job-source-statuses" aria-live="polite"></div>
-
-        <section class="job-results" id="job-results" aria-labelledby="job-results-title" aria-live="polite" hidden>
-          <div class="job-results-heading">
-            <div><p class="section-number">Ranked comparison</p><h3 id="job-results-title">Top 5 Junior Opportunities</h3></div>
-            <p id="job-result-count"></p>
-          </div>
-          <div class="job-result-message" id="job-result-message"></div>
-          <div class="job-card-list" id="job-card-list"></div>
-        </section>
+        </aside>
       </section>
 
-      <section class="method-note" aria-labelledby="method-title">
-        <p class="section-number">How it works</p>
-        <h2 id="method-title">Discovery first. Retrieval when you need it.</h2>
-        <div class="method-grid">
-          <article><strong>RSS</strong><p>Tells the app what each publisher recently posted.</p></article>
-          <span aria-hidden="true">→</span>
-          <article><strong>Firecrawl</strong><p>Reads one selected article or user-entered webpage and returns a clean excerpt.</p></article>
+      <section class="results-section" aria-labelledby="results-title">
+        <div class="section-heading"><div><p class="section-number">04 / Output</p><h2 id="results-title">Your Precimac list</h2></div><p>Plain text · ready to shop</p></div>
+        <div class="results-grid">
+          <article class="shopping-card"><div class="card-heading"><h3>Shopping list</h3><span id="shopping-timeframe">1 day</span></div><pre id="shopping-list" tabindex="0">Add ingredients to generate your list.</pre><button class="primary-button" id="copy-list" type="button" disabled>Copy shopping list</button><p class="action-status" id="copy-status" role="status" aria-live="polite"></p></article>
+          <article class="saved-card"><div class="card-heading"><h3>Saved meals</h3><span>On this device</span></div><form id="save-meal-form" class="save-form"><label for="meal-name" class="sr-only">Meal name</label><input id="meal-name" type="text" maxlength="48" placeholder="Name this meal" required><button class="secondary-button" type="submit">Save meal</button></form><p class="action-status" id="save-status" role="status" aria-live="polite"></p><div id="saved-meals" class="saved-meals"></div><p class="empty-message" id="saved-empty">No saved meals yet.</p></article>
         </div>
       </section>
+
     </main>
-
-    <footer><span>AI News Briefing</span><span>Phase 4 · Junior Job Scout</span></footer>
+    <footer><span>Precimac 精点</span><span>Phase 1 · Local-first build</span></footer>
   </body>
 </html>
