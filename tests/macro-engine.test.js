@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { buildShoppingList, calculateMealTotals, calculateTargets, filterIngredients, normalizeManualTargets, normalizeSavedMeals, scalePlan } from '../macro-engine.js';
+
+await import('../macro-engine.js');
+const { buildShoppingList, calculateMealTotals, calculateTargets, filterIngredients, normalizeManualTargets, normalizeSavedMeals, scalePlan } = globalThis.PrecimacEngine;
 
 const ingredients = JSON.parse(await readFile(new URL('../data/ingredients.json', import.meta.url), 'utf8'));
 

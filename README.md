@@ -15,7 +15,7 @@ Precimac is a vanilla-JavaScript nutrition planning app. It turns daily macro ta
 
 ## Run locally
 
-Serve the repository with any static development server. The nutrition planner has no server, API key, or external data dependency.
+Open `index.html` directly or serve the repository with any static development server. The nutrition planner has no server, API key, or external data dependency.
 
 ## Architecture guardrails
 

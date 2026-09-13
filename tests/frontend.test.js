@@ -27,6 +27,19 @@ test('Phase 1 includes both target flows and the complete local meal workflow', 
   assert.doesNotMatch(script, /innerHTML/);
 });
 
+test('the app can initialize from a direct file without modules or fetch', async () => {
+  const html = await readFile(new URL('index.html', root), 'utf8');
+  const script = await readFile(new URL('script.js', root), 'utf8');
+  const enginePosition = html.indexOf('src="macro-engine.js"');
+  const dataPosition = html.indexOf('src="data/ingredients.js"');
+  const appPosition = html.indexOf('src="script.js"');
+
+  assert.ok(enginePosition > 0 && enginePosition < dataPosition && dataPosition < appPosition);
+  assert.doesNotMatch(html, /type="module"/);
+  assert.doesNotMatch(script, /\bfetch\s*\(/);
+  assert.match(script, /globalThis\.PrecimacIngredients/);
+});
+
 test('the interface provides responsive, accessible, reduced-motion styling', async () => {
   const html = await readFile(new URL('index.html', root), 'utf8');
   const css = await readFile(new URL('style.css', root), 'utf8');

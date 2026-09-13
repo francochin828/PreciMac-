@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check macro-engine.js && node --check script.js",
+    "check": "node --check macro-engine.js && node --check data/ingredients.js && node --check script.js",
     "test": "node --test --test-concurrency=1 tests/*.test.js"
   },
   "engines": {

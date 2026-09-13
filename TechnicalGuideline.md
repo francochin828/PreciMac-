@@ -8,6 +8,7 @@ Precimac is a static, local-first web application:
 - CSS for presentation
 - Vanilla JavaScript modules for behavior
 - A bundled JSON file for ingredient data
+- A browser-ready local mirror so direct-file use requires no network fetch
 - `localStorage` for saved meals
 - Static hosting on Vercel
 

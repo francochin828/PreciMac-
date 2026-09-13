@@ -1,4 +1,7 @@
-export const TIMEFRAMES = Object.freeze({
+(() => {
+'use strict';
+
+const TIMEFRAMES = Object.freeze({
   meal: { label: '1 meal', days: 0.25, mealRepeats: 1 },
   day: { label: '1 day', days: 1, mealRepeats: 4 },
   week: { label: '1 week', days: 7, mealRepeats: 28 },
@@ -19,7 +22,7 @@ function round(value, places = 0) {
   return Math.round((value + Number.EPSILON) * factor) / factor;
 }
 
-export function normalizeManualTargets(values) {
+function normalizeManualTargets(values) {
   return {
     calories: round(finitePositive(values.calories, 'Calories')),
     protein: round(finitePositive(values.protein, 'Protein')),
@@ -28,7 +31,7 @@ export function normalizeManualTargets(values) {
   };
 }
 
-export function normalizeSavedMeals(value, limit = 30) {
+function normalizeSavedMeals(value, limit = 30) {
   if (!Array.isArray(value)) return [];
 
   return value.slice(0, limit).flatMap((meal, index) => {
@@ -59,7 +62,7 @@ export function normalizeSavedMeals(value, limit = 30) {
   });
 }
 
-export function calculateTargets({ weightKg, heightCm, age, goal }) {
+function calculateTargets({ weightKg, heightCm, age, goal }) {
   const weight = finitePositive(weightKg, 'Weight');
   const height = finitePositive(heightCm, 'Height');
   const years = finitePositive(age, 'Age');
@@ -73,7 +76,7 @@ export function calculateTargets({ weightKg, heightCm, age, goal }) {
   return { calories, protein, carbs, fats };
 }
 
-export function filterIngredients(ingredients, filters = {}) {
+function filterIngredients(ingredients, filters = {}) {
   return ingredients.filter((ingredient) => {
     const tags = ingredient.tags || [];
     if (filters.dairyFree && tags.includes('dairy')) return false;
@@ -84,7 +87,7 @@ export function filterIngredients(ingredients, filters = {}) {
   });
 }
 
-export function calculateMealTotals(items, ingredients) {
+function calculateMealTotals(items, ingredients) {
   const lookup = new Map(ingredients.map((ingredient) => [ingredient.id, ingredient]));
   const totals = { calories: 0, protein: 0, carbs: 0, fats: 0 };
   items.forEach(({ id, quantity }) => {
@@ -96,14 +99,14 @@ export function calculateMealTotals(items, ingredients) {
   return Object.fromEntries(Object.entries(totals).map(([macro, value]) => [macro, round(value, 1)]));
 }
 
-export function scalePlan(mealTotals, dailyTargets, timeframeKey) {
+function scalePlan(mealTotals, dailyTargets, timeframeKey) {
   const timeframe = TIMEFRAMES[timeframeKey] || TIMEFRAMES.day;
   const planned = Object.fromEntries(Object.entries(mealTotals).map(([key, value]) => [key, round(value * timeframe.mealRepeats, 1)]));
   const targets = Object.fromEntries(Object.entries(dailyTargets).map(([key, value]) => [key, round(value * timeframe.days, 1)]));
   return { timeframe, planned, targets };
 }
 
-export function buildShoppingList({ items, ingredients, timeframeKey, preference = '' }) {
+function buildShoppingList({ items, ingredients, timeframeKey, preference = '' }) {
   const timeframe = TIMEFRAMES[timeframeKey] || TIMEFRAMES.day;
   const lookup = new Map(ingredients.map((ingredient) => [ingredient.id, ingredient]));
   const lines = [`PRECIMAC — ${timeframe.label.toUpperCase()}`, `${timeframe.mealRepeats} meal serving${timeframe.mealRepeats === 1 ? '' : 's'}`, ''];
@@ -118,3 +121,15 @@ export function buildShoppingList({ items, ingredients, timeframeKey, preference
   if (note) lines.push('', `Prep note: ${note}`);
   return lines.join('\n');
 }
+
+globalThis.PrecimacEngine = Object.freeze({
+  TIMEFRAMES,
+  buildShoppingList,
+  calculateMealTotals,
+  calculateTargets,
+  filterIngredients,
+  normalizeManualTargets,
+  normalizeSavedMeals,
+  scalePlan
+});
+})();

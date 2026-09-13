@@ -16,17 +16,28 @@ test('the application remains dependency-free', async () => {
 });
 
 test('runtime code uses only the bundled ingredient dataset', async () => {
-  const [html, script, engine] = await Promise.all([
+  const [html, script, engine, ingredientScript] = await Promise.all([
     read('index.html'),
     read('script.js'),
     read('macro-engine.js'),
+    read('data/ingredients.js'),
   ]);
-  const runtime = `${html}\n${script}\n${engine}`;
+  const runtime = `${html}\n${script}\n${engine}\n${ingredientScript}`;
 
-  assert.match(script, /fetch\(['"]\.\/data\/ingredients\.json['"]\)/);
+  assert.match(html, /src="data\/ingredients\.js"/);
+  assert.match(ingredientScript, /globalThis\.PrecimacIngredients/);
   assert.doesNotMatch(runtime, /https?:\/\//i);
   assert.doesNotMatch(runtime, /firecrawl/i);
   assert.doesNotMatch(runtime, /\/api\//i);
+});
+
+test('browser-ready ingredient data matches the JSON source', async () => {
+  const source = JSON.parse(await read('data/ingredients.json'));
+  const browserData = await read('data/ingredients.js');
+  const openingBracket = browserData.indexOf('[');
+  const closingBracket = browserData.lastIndexOf(']');
+
+  assert.deepEqual(JSON.parse(browserData.slice(openingBracket, closingBracket + 1)), source);
 });
 
 test('saved meals stay local and user content uses safe DOM APIs', async () => {

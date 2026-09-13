@@ -35,6 +35,7 @@ Not included:
 - `script.js`: user interactions, rendering, and browser persistence
 - `macro-engine.js`: pure calculation and validation logic
 - `data/ingredients.json`: bundled ingredient and nutrition data
+- `data/ingredients.js`: browser-ready mirror used for direct-file startup
 - `tests/`: behavior and architecture regression tests
 
 ## Product contracts

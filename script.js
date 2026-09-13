@@ -1,4 +1,7 @@
-import {
+(() => {
+'use strict';
+
+const {
   TIMEFRAMES,
   buildShoppingList,
   calculateMealTotals,
@@ -7,7 +10,7 @@ import {
   normalizeManualTargets,
   normalizeSavedMeals,
   scalePlan
-} from './macro-engine.js';
+} = globalThis.PrecimacEngine;
 
 const STORAGE_KEY = 'precimac.savedMeals.v1';
 const MACROS = ['calories', 'protein', 'carbs', 'fats'];
@@ -326,14 +329,12 @@ function bindEvents() {
   elements.savedMeals.addEventListener('click', (event) => { const id = event.target.closest('[data-load-meal]')?.dataset.loadMeal; if (id) loadMeal(id); });
 }
 
-async function initialize() {
+function initialize() {
   bindEvents();
   state.saved = readStoredMeals();
   renderSavedMeals();
   try {
-    const response = await fetch('./data/ingredients.json');
-    if (!response.ok) throw new Error('Ingredient data could not be loaded.');
-    const ingredients = await response.json();
+    const ingredients = globalThis.PrecimacIngredients;
     if (!Array.isArray(ingredients) || ingredients.length === 0) throw new Error('Ingredient data is empty.');
     state.ingredients = ingredients;
     renderIngredients();
@@ -349,3 +350,4 @@ async function initialize() {
 }
 
 initialize();
+})();
