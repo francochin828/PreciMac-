@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Precimac turns exact nutrition targets into meal plans and copyable grocery lists.">
+    <meta name="theme-color" content="#0b1019">
     <title>Precimac (精点) — High Precision Nutrition Engine</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
@@ -22,7 +23,7 @@
         <div class="hero-readout" aria-label="Product capabilities"><span>01</span><p>Set targets</p><span>02</span><p>Build your meal</p><span>03</span><p>Copy your list</p></div>
       </section>
 
-      <div class="app-status" id="app-status" role="status" aria-live="polite">Loading the local ingredient dataset…</div>
+      <div class="app-status" id="app-status" role="status" aria-live="polite" aria-atomic="true">Loading the local ingredient dataset…</div>
 
       <section class="panel target-panel" aria-labelledby="targets-title">
         <div class="section-heading"><div><p class="section-number">01 / Targets</p><h2 id="targets-title">Set your macro target</h2></div><p>Daily baseline</p></div>
@@ -66,7 +67,7 @@
         <div class="ingredient-browser">
           <div class="section-heading"><div><p class="section-number">03 / Build</p><h2 id="builder-title">Build one repeatable meal</h2></div><p id="ingredient-count">Loading…</p></div>
           <p class="section-intro">Each quantity is one listed serving. Your chosen meal repeats across the selected timeframe.</p>
-          <div class="ingredient-grid" id="ingredient-grid" aria-live="polite"></div>
+          <div class="ingredient-grid" id="ingredient-grid" aria-live="polite" aria-busy="true"></div>
           <div class="empty-message" id="ingredient-empty" hidden>No ingredients match these filters.</div>
         </div>
         <aside class="plan-sidebar" aria-labelledby="current-meal-title">
@@ -78,10 +79,10 @@
             </div>
             <div class="goal-block">
               <div class="goal-heading"><h3>Goal indicator</h3><p id="goal-context">1 day plan</p></div>
-              <div class="goal-row"><div><span>Calories</span><output id="calories-progress-label">0 / 2310 kcal</output></div><progress id="calories-progress" max="2310" value="0"></progress></div>
-              <div class="goal-row"><div><span>Protein</span><output id="protein-progress-label">0 / 180 g</output></div><progress id="protein-progress" max="180" value="0"></progress></div>
-              <div class="goal-row"><div><span>Carbs</span><output id="carbs-progress-label">0 / 240 g</output></div><progress id="carbs-progress" max="240" value="0"></progress></div>
-              <div class="goal-row"><div><span>Fats</span><output id="fats-progress-label">0 / 70 g</output></div><progress id="fats-progress" max="70" value="0"></progress></div>
+              <div class="goal-row"><div><span>Calories</span><output id="calories-progress-label">0 / 2310 kcal</output></div><progress id="calories-progress" max="2310" value="0" aria-label="Calories progress toward target"></progress></div>
+              <div class="goal-row"><div><span>Protein</span><output id="protein-progress-label">0 / 180 g</output></div><progress id="protein-progress" max="180" value="0" aria-label="Protein progress toward target"></progress></div>
+              <div class="goal-row"><div><span>Carbs</span><output id="carbs-progress-label">0 / 240 g</output></div><progress id="carbs-progress" max="240" value="0" aria-label="Carbohydrate progress toward target"></progress></div>
+              <div class="goal-row"><div><span>Fats</span><output id="fats-progress-label">0 / 70 g</output></div><progress id="fats-progress" max="70" value="0" aria-label="Fat progress toward target"></progress></div>
             </div>
           </div>
         </aside>
@@ -96,6 +97,6 @@
       </section>
 
     </main>
-    <footer><span>Precimac 精点</span><span>Phase 1 · Local-first build</span></footer>
+    <footer><span>Precimac 精点</span><span>All phases complete · Local-first build</span></footer>
   </body>
 </html>

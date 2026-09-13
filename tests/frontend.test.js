@@ -31,10 +31,20 @@ test('the interface provides responsive, accessible, reduced-motion styling', as
   const html = await readFile(new URL('index.html', root), 'utf8');
   const css = await readFile(new URL('style.css', root), 'utf8');
   assert.match(html, /aria-live="polite"/);
+  assert.match(html, /aria-busy="true"/);
+  assert.match(html, /aria-label="Calories progress toward target"/);
   assert.match(html, /class="skip-link"/);
   assert.match(css, /@media \(max-width: 680px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /:focus-visible/);
+  assert.match(css, /content-visibility: auto/);
+  assert.match(css, /min-width: 44px/);
+});
+
+test('Phase 3 reports the completed local-first release', async () => {
+  const html = await readFile(new URL('index.html', root), 'utf8');
+  assert.match(html, /All phases complete · Local-first build/);
+  assert.doesNotMatch(html, /Phase 1 · Local-first build/);
 });
 
 test('the static app contains no scraping or external API integration', async () => {

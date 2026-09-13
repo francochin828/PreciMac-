@@ -16,10 +16,10 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: radial-gradient(circle at 80% 0%, #14263a 0, transparent 32rem), var(--background); color: var(--ink); }
+body { min-height: 100vh; margin: 0; background: radial-gradient(circle at 80% 0%, #14263a 0, transparent 32rem), var(--background); color: var(--ink); }
 button, input, select { font: inherit; }
 button, label, input, select { -webkit-tap-highlight-color: transparent; }
-button { color: inherit; }
+button { color: inherit; touch-action: manipulation; }
 a { color: inherit; }
 [hidden] { display: none !important; }
 
@@ -91,7 +91,7 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px v
 .builder-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.75fr); gap: 24px; margin: 70px 0; }
 .ingredient-browser { min-width: 0; }
 .ingredient-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.ingredient-card { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.ingredient-card { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); content-visibility: auto; contain-intrinsic-size: auto 210px; }
 .ingredient-category { margin: 0 0 10px; color: var(--accent-bright); font-size: 0.65rem; font-weight: 850; text-transform: uppercase; letter-spacing: 0.12em; }
 .ingredient-card h3 { margin: 0 0 4px; font-size: 1.1rem; letter-spacing: -0.02em; }
 .serving-label { margin: 0; color: var(--muted); font-size: 0.72rem; }
@@ -178,6 +178,8 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 30px
   .builder-layout, .results-section { margin: 52px 0; }
   .save-form { grid-template-columns: 1fr; }
   .save-form .secondary-button { width: 100%; }
+  input[type="number"], input[type="text"], select { font-size: 1rem; }
+  .quantity-controls button { min-width: 44px; height: 44px; }
   footer { flex-direction: column; }
 }
 

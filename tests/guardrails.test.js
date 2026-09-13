@@ -38,12 +38,16 @@ test('saved meals stay local and user content uses safe DOM APIs', async () => {
 });
 
 test('local secrets and deployment metadata are ignored', async () => {
-  const gitignore = await read('.gitignore');
+  const [gitignore, envExample] = await Promise.all([
+    read('.gitignore'),
+    read('.env.example'),
+  ]);
 
   assert.match(gitignore, /^\.env\.local$/m);
   assert.match(gitignore, /^\.env\.\*\.local$/m);
   assert.match(gitignore, /^\.vercel\/$/m);
   assert.match(gitignore, /^node_modules\/$/m);
+  assert.doesNotMatch(envExample, /firecrawl|api[_-]?key/i);
 });
 
 test('there are no serverless API handlers', async () => {

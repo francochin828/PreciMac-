@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { buildShoppingList, calculateMealTotals, calculateTargets, filterIngredients, normalizeManualTargets, scalePlan } from '../macro-engine.js';
+import { buildShoppingList, calculateMealTotals, calculateTargets, filterIngredients, normalizeManualTargets, normalizeSavedMeals, scalePlan } from '../macro-engine.js';
 
 const ingredients = JSON.parse(await readFile(new URL('../data/ingredients.json', import.meta.url), 'utf8'));
 
@@ -42,4 +42,28 @@ test('shopping list scales quantities and includes a custom prep note', () => {
   assert.match(list, /Chicken breast: 480 g/);
   assert.match(list, /4 meal servings/);
   assert.match(list, /Prep note: Low sodium/);
+});
+
+test('saved meal normalization drops malformed browser data safely', () => {
+  const meals = normalizeSavedMeals([
+    null,
+    { name: '', items: [], targets: {} },
+    {
+      id: 'valid',
+      name: '  Training day  ',
+      items: [{ id: 'chicken-breast', quantity: '1.5' }, { id: 'rice', quantity: -2 }],
+      targets: { calories: 2400, protein: 180, carbs: 250, fats: 70 },
+      timeframe: 'unknown',
+      preference: 42
+    }
+  ]);
+
+  assert.deepEqual(meals, [{
+    id: 'valid',
+    name: 'Training day',
+    items: [{ id: 'chicken-breast', quantity: 1.5 }],
+    targets: { calories: 2400, protein: 180, carbs: 250, fats: 70 },
+    timeframe: 'day',
+    preference: ''
+  }]);
 });

@@ -47,9 +47,9 @@ Not included:
 
 ## Delivery phases
 
-1. Build the working local-first nutrition planner.
-2. Lock the architecture and product boundaries with documentation and automated guardrail tests.
-3. Improve the curated ingredient catalogue and meal-planning depth without adding external data dependencies.
-4. Polish accessibility, mobile behavior, performance, and release readiness.
+- Phase 0 — Complete: static deployment pipeline and Precimac identity.
+- Phase 1 — Complete: macro engine, meal builder, goal indicators, shopping list, dietary filters, and saved meals.
+- Phase 2 — Excluded by product decision: the proposed Firecrawl Web Explorer is not part of Precimac.
+- Phase 3 — Complete: performance, resilience, accessibility, responsive mobile behavior, and release readiness.
 
 Any later expansion beyond these boundaries should be an explicit product decision, not an incidental dependency.

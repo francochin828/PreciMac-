@@ -28,6 +28,37 @@ export function normalizeManualTargets(values) {
   };
 }
 
+export function normalizeSavedMeals(value, limit = 30) {
+  if (!Array.isArray(value)) return [];
+
+  return value.slice(0, limit).flatMap((meal, index) => {
+    if (!meal || typeof meal !== 'object') return [];
+    const name = typeof meal.name === 'string' ? meal.name.trim().slice(0, 48) : '';
+    const items = Array.isArray(meal.items)
+      ? meal.items.flatMap((item) => {
+        const quantity = Number(item?.quantity);
+        return typeof item?.id === 'string' && Number.isFinite(quantity) && quantity > 0
+          ? [{ id: item.id, quantity: round(quantity, 1) }]
+          : [];
+      })
+      : [];
+    if (!name || !items.length) return [];
+
+    try {
+      return [{
+        id: typeof meal.id === 'string' && meal.id ? meal.id : `stored-${index}`,
+        name,
+        items,
+        targets: normalizeManualTargets(meal.targets || {}),
+        timeframe: TIMEFRAMES[meal.timeframe] ? meal.timeframe : 'day',
+        preference: typeof meal.preference === 'string' ? meal.preference.slice(0, 120) : ''
+      }];
+    } catch {
+      return [];
+    }
+  });
+}
+
 export function calculateTargets({ weightKg, heightCm, age, goal }) {
   const weight = finitePositive(weightKg, 'Weight');
   const height = finitePositive(heightCm, 'Height');

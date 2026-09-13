@@ -5,6 +5,7 @@ import {
   calculateTargets,
   filterIngredients,
   normalizeManualTargets,
+  normalizeSavedMeals,
   scalePlan
 } from './macro-engine.js';
 
@@ -69,7 +70,7 @@ function selectedArray() {
 function readStoredMeals() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.slice(0, 30) : [];
+    return normalizeSavedMeals(parsed);
   } catch {
     return [];
   }
@@ -110,8 +111,15 @@ function createIngredientCard(ingredient) {
 function renderIngredients() {
   const visible = filterIngredients(state.ingredients, state.filters);
   elements.ingredientGrid.replaceChildren(...visible.map(createIngredientCard));
+  elements.ingredientGrid.setAttribute('aria-busy', 'false');
   elements.ingredientCount.textContent = `${visible.length} of ${state.ingredients.length} ingredients`;
   elements.ingredientEmpty.hidden = visible.length !== 0;
+}
+
+function syncIngredientButton(id) {
+  const button = [...elements.ingredientGrid.querySelectorAll('[data-add-ingredient]')]
+    .find((candidate) => candidate.dataset.addIngredient === id);
+  if (button) button.textContent = state.selected.has(id) ? 'Add another' : 'Add';
 }
 
 function createSelectedRow(item) {
@@ -185,13 +193,13 @@ function renderPlan() {
   elements.mealEmpty.hidden = rows.length !== 0;
   renderTotals(items);
   renderShoppingList(items);
-  renderIngredients();
 }
 
 function addIngredient(id) {
   state.selected.set(id, (state.selected.get(id) || 0) + 1);
   elements.copyStatus.textContent = '';
   renderPlan();
+  syncIngredientButton(id);
 }
 
 function changeQuantity(id, step) {
@@ -199,6 +207,7 @@ function changeQuantity(id, step) {
   if (next <= 0) state.selected.delete(id);
   else state.selected.set(id, next);
   renderPlan();
+  syncIngredientButton(id);
 }
 
 function applyTargetMode(mode) {
@@ -286,6 +295,7 @@ function loadMeal(id) {
   document.querySelector(`input[name="timeframe"][value="${state.timeframe}"]`).checked = true;
   applyTargetMode('manual');
   elements.saveStatus.textContent = `Loaded “${meal.name}”.`;
+  renderIngredients();
   renderPlan();
 }
 
@@ -307,7 +317,7 @@ function bindEvents() {
   elements.ingredientGrid.addEventListener('click', (event) => { const id = event.target.closest('[data-add-ingredient]')?.dataset.addIngredient; if (id) addIngredient(id); });
   elements.selectedItems.addEventListener('click', (event) => {
     const removeId = event.target.closest('[data-remove-ingredient]')?.dataset.removeIngredient;
-    if (removeId) { state.selected.delete(removeId); renderPlan(); return; }
+    if (removeId) { state.selected.delete(removeId); renderPlan(); syncIngredientButton(removeId); return; }
     const stepButton = event.target.closest('[data-quantity-step]');
     if (stepButton) changeQuantity(stepButton.dataset.ingredientId, Number(stepButton.dataset.quantityStep));
   });
@@ -326,10 +336,12 @@ async function initialize() {
     const ingredients = await response.json();
     if (!Array.isArray(ingredients) || ingredients.length === 0) throw new Error('Ingredient data is empty.');
     state.ingredients = ingredients;
+    renderIngredients();
     renderPlan();
     setStatus(`${ingredients.length} local ingredients ready. Calculations stay on this device.`, 'success');
   } catch (error) {
     elements.ingredientCount.textContent = 'Unavailable';
+    elements.ingredientGrid.setAttribute('aria-busy', 'false');
     elements.ingredientEmpty.hidden = false;
     elements.ingredientEmpty.textContent = 'The local ingredient dataset could not be loaded. Refresh to retry.';
     setStatus(error.message, 'error');
