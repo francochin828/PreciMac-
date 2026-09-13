@@ -23,7 +23,16 @@ const elements = {
   macroForm: document.querySelector('#macro-form'),
   manualFields: document.querySelector('#manual-fields'),
   calculatedFields: document.querySelector('#calculated-fields'),
+  formActionRow: document.querySelector('#form-action-row'),
   methodNote: document.querySelector('#target-method-note'),
+  calculatorStep: document.querySelector('#calculator-step'),
+  calculatorProgress: document.querySelector('#calculator-progress'),
+  calculatorQuestion: document.querySelector('#calculator-question'),
+  calculatorHint: document.querySelector('#calculator-hint'),
+  calculatorAnswer: document.querySelector('#calculator-answer'),
+  calculatorError: document.querySelector('#calculator-error'),
+  calculatorBack: document.querySelector('#calculator-back'),
+  calculatorNext: document.querySelector('#calculator-next'),
   timeframeSummary: document.querySelector('#timeframe-summary'),
   customPreference: document.querySelector('#custom-preference'),
   ingredientGrid: document.querySelector('#ingredient-grid'),
@@ -53,7 +62,18 @@ const state = {
   timeframe: 'day',
   filters: { dairyFree: false, porkFree: false, vegetarian: false, highProtein: false },
   saved: [],
-  checkedBasketItems: new Set()
+  checkedBasketItems: new Set(),
+  calculatorIndex: 0,
+  calculatorComplete: false,
+  calculatorAnswers: {
+    goal: 'maintain',
+    sex: 'neutral',
+    age: 30,
+    weightKg: 80,
+    heightCm: 180,
+    activityLevel: 'moderate',
+    pace: 'standard'
+  }
 };
 
 const PRESETS = Object.freeze({
@@ -61,6 +81,16 @@ const PRESETS = Object.freeze({
   maintain: { calories: 2310, protein: 180, carbs: 240, fats: 70 },
   bulk: { calories: 3000, protein: 200, carbs: 350, fats: 89 }
 });
+
+const CALCULATOR_QUESTIONS = Object.freeze([
+  { key: 'goal', question: 'What are you working toward?', hint: 'This sets the direction of your calorie target.', options: [['cut', 'Lose body fat', 'A controlled calorie deficit'], ['maintain', 'Maintain', 'Keep body weight broadly stable'], ['bulk', 'Build muscle', 'A controlled calorie surplus']] },
+  { key: 'sex', question: 'Which equation input should we use?', hint: 'The Mifflin–St Jeor equation uses a sex-specific constant. Choose neutral if neither option fits or you prefer not to say.', options: [['male', 'Male', 'Uses the male equation constant'], ['female', 'Female', 'Uses the female equation constant'], ['neutral', 'Neutral estimate', 'Uses the midpoint of both constants']] },
+  { key: 'age', question: 'How old are you?', hint: 'This calculator is intended for adults aged 18 and over.', type: 'number', min: 18, max: 100, step: 1, unit: 'years' },
+  { key: 'weightKg', question: 'What is your current weight?', hint: 'Use your recent typical weight, not a single unusual measurement.', type: 'number', min: 30, max: 300, step: 0.1, unit: 'kg' },
+  { key: 'heightCm', question: 'What is your height?', hint: 'Enter your height without shoes.', type: 'number', min: 120, max: 230, step: 1, unit: 'cm' },
+  { key: 'activityLevel', question: 'What does a normal week look like?', hint: 'Include work, walking, training, and sport—not just gym sessions.', options: [['sedentary', 'Mostly seated', 'Desk-based day with little structured exercise'], ['light', 'Lightly active', 'Regular walking or training 1–3 days a week'], ['moderate', 'Moderately active', 'Training 3–5 days a week'], ['very', 'Very active', 'Hard training 6–7 days a week or a physical job'], ['athlete', 'Athlete-level', 'Very hard training plus a highly active day']] },
+  { key: 'pace', question: 'How quickly do you want to move?', hint: 'A gentler pace is easier to sustain. You can adjust the result after two to three weeks of real-world tracking.', options: [['gentle', 'Gentle', 'Small calorie adjustment'], ['standard', 'Standard', 'Moderate calorie adjustment'], ['fast', 'Faster', 'Larger calorie adjustment']] }
+]);
 
 function setStatus(message, type = '') {
   elements.appStatus.textContent = message;
@@ -262,6 +292,123 @@ function changeQuantity(id, step) {
   syncIngredientButton(id);
 }
 
+function activeCalculatorQuestions() {
+  return state.calculatorAnswers.goal === 'maintain'
+    ? CALCULATOR_QUESTIONS.filter((question) => question.key !== 'pace')
+    : CALCULATOR_QUESTIONS;
+}
+
+function createCalculatorChoice(question, option) {
+  const [value, title, description] = option;
+  const label = makeElement('label', 'calculator-choice');
+  const input = document.createElement('input');
+  input.type = 'radio';
+  input.name = 'calculator-answer';
+  input.value = value;
+  input.checked = state.calculatorAnswers[question.key] === value;
+  const content = makeElement('span');
+  content.append(makeElement('strong', '', title), makeElement('small', '', description));
+  label.append(input, content);
+  return label;
+}
+
+function renderCalculatorQuestion() {
+  const questions = activeCalculatorQuestions();
+  state.calculatorIndex = Math.min(state.calculatorIndex, questions.length - 1);
+  const question = questions[state.calculatorIndex];
+  elements.calculatorStep.textContent = `Question ${state.calculatorIndex + 1} of ${questions.length}`;
+  elements.calculatorProgress.max = questions.length;
+  elements.calculatorProgress.value = state.calculatorIndex + 1;
+  elements.calculatorQuestion.textContent = question.question;
+  elements.calculatorHint.textContent = question.hint;
+  elements.calculatorError.textContent = '';
+  elements.calculatorBack.disabled = state.calculatorIndex === 0;
+  elements.calculatorNext.textContent = state.calculatorIndex === questions.length - 1 ? 'Calculate my targets' : 'Continue';
+
+  if (question.type === 'number') {
+    const label = makeElement('label', 'calculator-number');
+    label.append(makeElement('span', '', question.unit));
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.id = 'calculator-number-input';
+    input.min = question.min;
+    input.max = question.max;
+    input.step = question.step;
+    input.value = state.calculatorAnswers[question.key];
+    input.setAttribute('aria-label', `${question.question} in ${question.unit}`);
+    label.prepend(input);
+    elements.calculatorAnswer.replaceChildren(label);
+    input.focus();
+    return;
+  }
+
+  elements.calculatorAnswer.replaceChildren(...question.options.map((option) => createCalculatorChoice(question, option)));
+}
+
+function renderCalculatorResult() {
+  elements.calculatorStep.textContent = 'Calculation complete';
+  elements.calculatorProgress.value = elements.calculatorProgress.max;
+  elements.calculatorQuestion.textContent = 'Your starting daily target is ready.';
+  elements.calculatorHint.textContent = 'Use it consistently, compare it with two to three weeks of real results, and adjust if needed.';
+  const result = makeElement('div', 'calculator-result');
+  [['Calories', state.targets.calories, 'kcal'], ['Protein', state.targets.protein, 'g'], ['Carbs', state.targets.carbs, 'g'], ['Fats', state.targets.fats, 'g']].forEach(([label, value, unit]) => {
+    const card = makeElement('div');
+    card.append(makeElement('span', '', label), makeElement('strong', '', displayNumber(value)), makeElement('small', '', unit));
+    result.append(card);
+  });
+  elements.calculatorAnswer.replaceChildren(result);
+  elements.calculatorError.textContent = '';
+  elements.calculatorBack.disabled = false;
+  elements.calculatorNext.textContent = 'View my generated plan';
+}
+
+function finishCalculator() {
+  state.targets = calculateTargets(state.calculatorAnswers);
+  MACROS.forEach((macro) => { document.querySelector(`#manual-${macro}`).value = state.targets[macro]; });
+  state.calculatorComplete = true;
+  renderCalculatorResult();
+  setStatus(`Calculated target: ${state.targets.calories} kcal · ${state.targets.protein} g protein · ${state.targets.carbs} g carbs · ${state.targets.fats} g fats.`, 'success');
+  generatePlan({ announce: false });
+}
+
+function advanceCalculator() {
+  if (state.calculatorComplete) {
+    document.querySelector('#builder-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  const questions = activeCalculatorQuestions();
+  const question = questions[state.calculatorIndex];
+  let value;
+  if (question.type === 'number') {
+    const input = document.querySelector('#calculator-number-input');
+    value = Number(input.value);
+    if (!Number.isFinite(value) || value < question.min || value > question.max) {
+      elements.calculatorError.textContent = `Enter a value between ${question.min} and ${question.max} ${question.unit}.`;
+      input.focus();
+      return;
+    }
+  } else {
+    value = document.querySelector('input[name="calculator-answer"]:checked')?.value;
+    if (!value) {
+      elements.calculatorError.textContent = 'Choose one option to continue.';
+      return;
+    }
+  }
+  state.calculatorAnswers[question.key] = value;
+  const updatedQuestions = activeCalculatorQuestions();
+  if (state.calculatorIndex >= updatedQuestions.length - 1) finishCalculator();
+  else {
+    state.calculatorIndex += 1;
+    renderCalculatorQuestion();
+  }
+}
+
+function previousCalculatorQuestion() {
+  if (state.calculatorComplete) state.calculatorComplete = false;
+  else state.calculatorIndex = Math.max(0, state.calculatorIndex - 1);
+  renderCalculatorQuestion();
+}
+
 function applyTargetMode(mode) {
   state.targetMode = mode;
   const calculating = mode === 'calculate';
@@ -269,9 +416,14 @@ function applyTargetMode(mode) {
   elements.manualFields.disabled = calculating;
   elements.calculatedFields.hidden = !calculating;
   elements.calculatedFields.disabled = !calculating;
+  elements.formActionRow.hidden = calculating;
   elements.methodNote.textContent = calculating
-    ? 'Quick estimate uses a moderate-activity, sex-neutral Mifflin-St Jeor baseline.'
+    ? 'Guided estimate using the Mifflin–St Jeor equation and your activity level.'
     : 'Using the exact daily targets you enter.';
+  if (calculating) {
+    if (state.calculatorComplete) renderCalculatorResult();
+    else renderCalculatorQuestion();
+  }
 }
 
 function applyTargets(event) {
@@ -284,18 +436,7 @@ function applyTargets(event) {
         fats: document.querySelector('#manual-fats').value,
         calories: document.querySelector('#manual-calories').value
       });
-    } else {
-      state.targets = calculateTargets({
-        weightKg: document.querySelector('#calc-weight').value,
-        heightCm: document.querySelector('#calc-height').value,
-        age: document.querySelector('#calc-age').value,
-        goal: document.querySelector('#calc-goal').value
-      });
-      document.querySelector('#manual-protein').value = state.targets.protein;
-      document.querySelector('#manual-carbs').value = state.targets.carbs;
-      document.querySelector('#manual-fats').value = state.targets.fats;
-      document.querySelector('#manual-calories').value = state.targets.calories;
-    }
+    } else state.targets = calculateTargets(state.calculatorAnswers);
     setStatus(`Targets applied: ${state.targets.calories} kcal · ${state.targets.protein} g protein · ${state.targets.carbs} g carbs · ${state.targets.fats} g fats.`, 'success');
     generatePlan();
   } catch (error) {
@@ -363,6 +504,9 @@ async function copyShoppingList() {
 function bindEvents() {
   document.querySelectorAll('[data-preset]').forEach((button) => button.addEventListener('click', () => applyPreset(button.dataset.preset)));
   document.querySelectorAll('input[name="target-mode"]').forEach((input) => input.addEventListener('change', () => applyTargetMode(input.value)));
+  elements.calculatorNext.addEventListener('click', advanceCalculator);
+  elements.calculatorBack.addEventListener('click', previousCalculatorQuestion);
+  elements.calculatorAnswer.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); advanceCalculator(); } });
   elements.macroForm.addEventListener('submit', applyTargets);
   document.querySelectorAll('input[name="timeframe"]').forEach((input) => input.addEventListener('change', () => { state.timeframe = input.value; renderPlan(); }));
   document.querySelectorAll('input[name="diet-filter"]').forEach((input) => input.addEventListener('change', () => {

@@ -16,6 +16,8 @@ test('Phase 1 includes both target flows and the complete local meal workflow', 
   const data = JSON.parse(await readFile(new URL('data/ingredients.json', root), 'utf8'));
   assert.match(html, /I know my macros/);
   assert.match(html, /Calculate for me/);
+  assert.match(html, /id="calculator-question"/);
+  assert.match(html, /id="calculator-answer"/);
   assert.match(html, /name="timeframe" value="month"/);
   assert.match(html, /High protein only/);
   assert.match(html, /id="ingredient-grid"/);
@@ -24,6 +26,17 @@ test('Phase 1 includes both target flows and the complete local meal workflow', 
   assert.ok(data.length >= 12);
   assert.match(script, /localStorage\.setItem/);
   assert.match(script, /navigator\.clipboard\.writeText/);
+  assert.doesNotMatch(script, /innerHTML/);
+});
+
+test('the guided calculator asks only calorie-relevant questions one at a time', async () => {
+  const script = await readFile(new URL('script.js', root), 'utf8');
+  assert.match(script, /key: 'sex'/);
+  assert.match(script, /key: 'activityLevel'/);
+  assert.match(script, /key: 'weightKg'/);
+  assert.match(script, /key: 'heightCm'/);
+  assert.match(script, /key: 'pace'/);
+  assert.match(script, /renderCalculatorQuestion/);
   assert.doesNotMatch(script, /innerHTML/);
 });
 

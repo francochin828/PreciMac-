@@ -50,14 +50,18 @@
             <label>Fats <span>grams</span><input id="manual-fats" name="fats" type="number" min="1" step="1" value="70" required></label>
             <label>Calories <span>kcal</span><input id="manual-calories" name="calories" type="number" min="1" step="10" value="2310" required></label>
           </fieldset>
-          <fieldset id="calculated-fields" class="field-grid" hidden disabled>
-            <legend class="sr-only">Quick calculated daily macro targets</legend>
-            <label>Weight <span>kg</span><input id="calc-weight" name="weight" type="number" min="30" max="300" step="0.1" value="80" required></label>
-            <label>Height <span>cm</span><input id="calc-height" name="height" type="number" min="120" max="230" step="1" value="180" required></label>
-            <label>Age <span>years</span><input id="calc-age" name="age" type="number" min="16" max="100" step="1" value="30" required></label>
-            <label>Goal <span>direction</span><select id="calc-goal" name="goal"><option value="cut">Cut</option><option value="maintain" selected>Maintain</option><option value="bulk">Bulk</option></select></label>
+          <fieldset id="calculated-fields" class="calculator-shell" hidden disabled>
+            <legend class="sr-only">Guided calorie and macro calculator</legend>
+            <div class="calculator-progress"><span id="calculator-step">Question 1 of 7</span><progress id="calculator-progress" max="7" value="1" aria-label="Calculator progress"></progress></div>
+            <div class="calculator-chat">
+              <span class="calculator-avatar" aria-hidden="true">精</span>
+              <div class="calculator-message"><p id="calculator-question">What are you working toward?</p><small id="calculator-hint">This sets the direction of your calorie target.</small></div>
+            </div>
+            <div id="calculator-answer" class="calculator-answer"></div>
+            <p id="calculator-error" class="calculator-error" role="alert"></p>
+            <div class="calculator-actions"><button class="text-button" id="calculator-back" type="button" disabled>Back</button><button class="primary-button" id="calculator-next" type="button">Continue</button></div>
           </fieldset>
-          <div class="form-action-row"><button class="primary-button" type="submit">Generate my plan</button><p id="target-method-note">Using the exact daily targets you enter.</p></div>
+          <div class="form-action-row" id="form-action-row"><button class="primary-button" type="submit">Generate my plan</button><p id="target-method-note">Using the exact daily targets you enter.</p></div>
         </form>
       </section>
 

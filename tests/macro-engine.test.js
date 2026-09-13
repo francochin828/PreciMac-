@@ -22,6 +22,16 @@ test('calculated target flow responds to cut, maintain, and bulk goals', () => {
   assert.ok(cut.protein > bulk.protein);
 });
 
+test('guided target calculation responds to sex, activity, and goal pace', () => {
+  const base = { weightKg: 80, heightCm: 180, age: 30, goal: 'cut' };
+  const sedentary = calculateTargets({ ...base, sex: 'female', activityLevel: 'sedentary', pace: 'gentle' });
+  const active = calculateTargets({ ...base, sex: 'male', activityLevel: 'very', pace: 'gentle' });
+  const faster = calculateTargets({ ...base, sex: 'male', activityLevel: 'very', pace: 'fast' });
+
+  assert.ok(active.calories > sedentary.calories);
+  assert.ok(faster.calories < active.calories);
+});
+
 test('dietary filters exclude dairy and pork and can require vegetarian protein', () => {
   const strict = filterIngredients(ingredients, { dairyFree: true, porkFree: true, vegetarian: true, highProtein: true });
   assert.ok(strict.length > 0);

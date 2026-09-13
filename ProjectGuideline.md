@@ -11,6 +11,7 @@ The project should remain useful without accounts, API keys, or third-party serv
 Included:
 
 - Manual and quick-calculated macro targets
+- A one-question-at-a-time guided calorie calculator
 - A curated local ingredient dataset
 - Dietary filters and preparation notes
 - A meal builder with live macro totals and goal indicators
@@ -19,7 +20,7 @@ Included:
 - Saved meals stored in the user's browser
 - Automatic meal generation from macro targets
 - Chinese-language, editable grocery baskets
-- A single-retailer checkout adapter boundary
+- An exclusive Dingdong Maicai checkout adapter boundary
 
 Not included:
 
@@ -32,7 +33,7 @@ Not included:
 - Firecrawl or any other web-scraping service
 - Heavy frontend frameworks
 
-The static MVP prepares the complete basket locally. Real retailer checkout may only be enabled through an approved retailer API or embedded checkout; it must never be simulated with a search link.
+The static MVP prepares the complete basket locally. Dingdong Maicai is the only planned retailer integration. Real checkout may only be enabled through its approved API or embedded checkout; it must never be simulated with a search link.
 
 ## Project map
 

@@ -14,7 +14,9 @@ Precimac is a static, local-first web application:
 
 Firecrawl is intentionally excluded. The application does not need live scraping, a backend, authentication, a database, or an external nutrition API for its current scope.
 
-The retailer checkout control is an explicit integration boundary. It remains disabled until an approved retailer API can create a real cart. Browser code must not contain retailer credentials or claim that a search or deep link populated a cart.
+The Dingdong Maicai checkout control is an explicit integration boundary. It remains disabled until an approved retailer API can create a real cart. Browser code must not contain retailer credentials or claim that a search or deep link populated a cart.
+
+The guided calculator uses the adult Mifflin–St Jeor resting-energy equation, an explicit activity factor, and a visible goal-pace adjustment. Its result is an estimate, not medical advice, and the interface must recommend checking it against real results over time.
 
 ## Stable data contracts
 

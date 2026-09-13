@@ -8,8 +8,14 @@ const TIMEFRAMES = Object.freeze({
   month: { label: '1 month', days: 30, mealRepeats: 120 }
 });
 
-const GOAL_FACTORS = Object.freeze({ cut: 0.85, maintain: 1, bulk: 1.1 });
+const GOAL_FACTORS = Object.freeze({
+  cut: Object.freeze({ gentle: 0.9, standard: 0.85, fast: 0.8 }),
+  maintain: Object.freeze({ gentle: 1, standard: 1, fast: 1 }),
+  bulk: Object.freeze({ gentle: 1.05, standard: 1.1, fast: 1.15 })
+});
 const PROTEIN_FACTORS = Object.freeze({ cut: 2.2, maintain: 2, bulk: 1.8 });
+const SEX_CONSTANTS = Object.freeze({ male: 5, female: -161, neutral: -78 });
+const ACTIVITY_FACTORS = Object.freeze({ sedentary: 1.2, light: 1.375, moderate: 1.55, very: 1.725, athlete: 1.9 });
 
 function finitePositive(value, label) {
   const number = Number(value);
@@ -62,13 +68,18 @@ function normalizeSavedMeals(value, limit = 30) {
   });
 }
 
-function calculateTargets({ weightKg, heightCm, age, goal }) {
+function calculateTargets({ weightKg, heightCm, age, goal, sex = 'neutral', activityLevel = 'moderate', pace = 'standard' }) {
   const weight = finitePositive(weightKg, 'Weight');
   const height = finitePositive(heightCm, 'Height');
   const years = finitePositive(age, 'Age');
-  const goalFactor = GOAL_FACTORS[goal];
-  if (!goalFactor) throw new Error('Choose cut, maintain, or bulk.');
-  const maintenance = (10 * weight + 6.25 * height - 5 * years - 78) * 1.45;
+  const goalFactor = GOAL_FACTORS[goal]?.[pace];
+  const sexConstant = SEX_CONSTANTS[sex];
+  const activityFactor = ACTIVITY_FACTORS[activityLevel];
+  if (!goalFactor) throw new Error('Choose a valid goal and pace.');
+  if (sexConstant === undefined) throw new Error('Choose the equation input that fits you best.');
+  if (!activityFactor) throw new Error('Choose a valid activity level.');
+  const restingEnergy = 9.99 * weight + 6.25 * height - 4.92 * years + sexConstant;
+  const maintenance = restingEnergy * activityFactor;
   const calories = Math.max(1200, round((maintenance * goalFactor) / 10) * 10);
   const protein = round(weight * PROTEIN_FACTORS[goal]);
   const fats = round((calories * 0.25) / 9);
