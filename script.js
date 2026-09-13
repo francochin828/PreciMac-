@@ -16,6 +16,7 @@ const {
 } = globalThis.PrecimacEngine;
 
 const STORAGE_KEY = 'precimac.savedMeals.v1';
+const USDA_FOODS_KEY = 'precimac.usdaFoods.v1';
 const MACROS = ['calories', 'protein', 'carbs', 'fats'];
 
 const elements = {
@@ -38,6 +39,10 @@ const elements = {
   ingredientGrid: document.querySelector('#ingredient-grid'),
   ingredientCount: document.querySelector('#ingredient-count'),
   ingredientEmpty: document.querySelector('#ingredient-empty'),
+  foodSearchInput: document.querySelector('#food-search-input'),
+  foodSearchLoader: document.querySelector('#food-search-loader'),
+  foodSearchStatus: document.querySelector('#food-search-status'),
+  foodSearchResults: document.querySelector('#food-search-results'),
   selectedItems: document.querySelector('#selected-items'),
   mealEmpty: document.querySelector('#meal-empty'),
   goalContext: document.querySelector('#goal-context'),
@@ -65,6 +70,8 @@ const state = {
   checkedBasketItems: new Set(),
   calculatorIndex: 0,
   calculatorComplete: false,
+  foodSearchController: null,
+  foodSearchTimer: null,
   calculatorAnswers: {
     goal: 'maintain',
     sex: 'neutral',
@@ -131,6 +138,31 @@ function persistMeals() {
   }
 }
 
+function readStoredUsdaFoods() {
+  try {
+    const foods = JSON.parse(localStorage.getItem(USDA_FOODS_KEY) || '[]');
+    return Array.isArray(foods) ? foods.filter(isUsdaIngredient).slice(0, 100) : [];
+  } catch {
+    return [];
+  }
+}
+
+function isUsdaIngredient(food) {
+  return Boolean(food && /^usda-\d+$/.test(food.id) && food.source === 'USDA' &&
+    typeof food.name === 'string' && food.name.length <= 180 &&
+    typeof food.nameZh === 'string' && typeof food.category === 'string' && Array.isArray(food.tags) &&
+    ['servingGrams', ...MACROS].every((key) => Number.isFinite(food[key]) && food[key] >= 0));
+}
+
+function persistUsdaFoods() {
+  try {
+    const foods = state.ingredients.filter((food) => food.source === 'USDA').slice(-100);
+    localStorage.setItem(USDA_FOODS_KEY, JSON.stringify(foods));
+  } catch {
+    // Search remains usable when browser storage is unavailable.
+  }
+}
+
 function createIngredientCard(ingredient) {
   const card = makeElement('article', 'ingredient-card');
   const category = makeElement('p', 'ingredient-category', ingredient.category);
@@ -165,6 +197,86 @@ function syncIngredientButton(id) {
   const button = [...elements.ingredientGrid.querySelectorAll('[data-add-ingredient]')]
     .find((candidate) => candidate.dataset.addIngredient === id);
   if (button) button.textContent = state.selected.has(id) ? 'Add another' : 'Add';
+}
+
+function createFoodSearchResult(food) {
+  const row = makeElement('article', 'food-search-result');
+  const identity = makeElement('div', 'food-search-identity');
+  const detail = food.brandOwner ? `${food.dataType || 'Branded'} · ${food.brandOwner}` : (food.dataType || 'USDA food');
+  identity.append(makeElement('strong', '', food.name), makeElement('small', '', detail));
+  const macros = makeElement('span', 'food-search-macros', `${displayNumber(food.calories)} kcal · ${displayNumber(food.protein)}P · ${displayNumber(food.carbs)}C · ${displayNumber(food.fats)}F`);
+  const button = makeElement('button', 'secondary-button', state.selected.has(food.id) ? 'Add another' : 'Add');
+  button.type = 'button';
+  button.dataset.addUsdaFood = food.id;
+  row.append(identity, macros, button);
+  row.dataset.food = JSON.stringify(food);
+  return row;
+}
+
+function setFoodSearchLoading(isLoading) {
+  elements.foodSearchLoader.hidden = !isLoading;
+  elements.foodSearchInput.setAttribute('aria-busy', String(isLoading));
+}
+
+async function searchUsdaFoods(query) {
+  if (location.protocol === 'file:') {
+    elements.foodSearchStatus.textContent = 'Live USDA search is available on the deployed Precimac website.';
+    elements.foodSearchResults.replaceChildren();
+    return;
+  }
+  elements.foodSearchController?.abort();
+  const controller = new AbortController();
+  state.foodSearchController = controller;
+  setFoodSearchLoading(true);
+  elements.foodSearchStatus.textContent = `Searching USDA for “${query}”…`;
+  try {
+    const response = await fetch(`/api/foods/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || 'USDA search is temporarily unavailable.');
+    elements.foodSearchResults.replaceChildren(...payload.foods.map(createFoodSearchResult));
+    elements.foodSearchStatus.textContent = payload.foods.length
+      ? `${payload.foods.length} USDA suggestion${payload.foods.length === 1 ? '' : 's'} found. Select Add to use one in your meal.`
+      : `No USDA foods found for “${query}”. Try a broader name.`;
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      elements.foodSearchResults.replaceChildren();
+      elements.foodSearchStatus.textContent = error.message || 'USDA search is temporarily unavailable.';
+    }
+  } finally {
+    if (state.foodSearchController === controller) setFoodSearchLoading(false);
+  }
+}
+
+function queueUsdaSearch() {
+  clearTimeout(state.foodSearchTimer);
+  const query = elements.foodSearchInput.value.trim();
+  if (query.length < 2) {
+    elements.foodSearchController?.abort();
+    setFoodSearchLoading(false);
+    elements.foodSearchResults.replaceChildren();
+    elements.foodSearchStatus.textContent = 'Type at least 2 characters for live USDA suggestions.';
+    return;
+  }
+  state.foodSearchTimer = setTimeout(() => searchUsdaFoods(query), 350);
+}
+
+function addUsdaFood(button) {
+  const row = button.closest('[data-food]');
+  if (!row) return;
+  try {
+    const food = JSON.parse(row.dataset.food);
+    if (!isUsdaIngredient(food)) throw new Error('Invalid USDA food result.');
+    if (!state.ingredients.some((ingredient) => ingredient.id === food.id)) {
+      state.ingredients.push(food);
+      persistUsdaFoods();
+      renderIngredients();
+    }
+    addIngredient(food.id);
+    button.textContent = 'Add another';
+    elements.foodSearchStatus.textContent = `${food.name} added to your meal.`;
+  } catch {
+    elements.foodSearchStatus.textContent = 'That USDA result could not be added. Please try another food.';
+  }
 }
 
 function createSelectedRow(item) {
@@ -246,7 +358,8 @@ function renderShoppingList(items) {
 }
 
 function generatePlan({ announce = true } = {}) {
-  const items = generateMealPlan({ ingredients: state.ingredients, targets: state.targets, filters: state.filters });
+  const localIngredients = state.ingredients.filter((ingredient) => ingredient.source !== 'USDA');
+  const items = generateMealPlan({ ingredients: localIngredients, targets: state.targets, filters: state.filters });
   state.selected = new Map(items.map((item) => [item.id, item.quantity]));
   state.checkedBasketItems.clear();
   renderIngredients();
@@ -516,6 +629,8 @@ function bindEvents() {
   }));
   elements.customPreference.addEventListener('input', () => renderShoppingList(selectedArray()));
   elements.ingredientGrid.addEventListener('click', (event) => { const id = event.target.closest('[data-add-ingredient]')?.dataset.addIngredient; if (id) addIngredient(id); });
+  elements.foodSearchInput.addEventListener('input', queueUsdaSearch);
+  elements.foodSearchResults.addEventListener('click', (event) => { const button = event.target.closest('[data-add-usda-food]'); if (button) addUsdaFood(button); });
   elements.selectedItems.addEventListener('click', (event) => {
     const removeId = event.target.closest('[data-remove-ingredient]')?.dataset.removeIngredient;
     if (removeId) { state.selected.delete(removeId); renderPlan(); syncIngredientButton(removeId); return; }
@@ -540,7 +655,8 @@ function initialize() {
   try {
     const ingredients = globalThis.PrecimacIngredients;
     if (!Array.isArray(ingredients) || ingredients.length === 0) throw new Error('Ingredient data is empty.');
-    state.ingredients = ingredients;
+    const storedUsdaFoods = readStoredUsdaFoods();
+    state.ingredients = [...ingredients, ...storedUsdaFoods.filter((food) => !ingredients.some((item) => item.id === food.id))];
     renderIngredients();
     generatePlan({ announce: false });
     setStatus(`${ingredients.length} local ingredients ready. Your starter basket has been generated.`, 'success');

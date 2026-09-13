@@ -2,7 +2,7 @@
 
 ## Approved architecture
 
-Precimac is a static, local-first web application:
+Precimac is a local-first web application with one narrow serverless integration:
 
 - HTML for document structure
 - CSS for presentation
@@ -11,8 +11,9 @@ Precimac is a static, local-first web application:
 - A browser-ready local mirror so direct-file use requires no network fetch
 - `localStorage` for saved meals
 - Static hosting on Vercel
+- A Vercel Function that proxies and normalizes USDA FoodData Central search
 
-Firecrawl is intentionally excluded. The application does not need live scraping, a backend, authentication, a database, or an external nutrition API for its current scope.
+Firecrawl and live scraping remain intentionally excluded. The application has no authentication or hosted database. USDA FoodData Central is the sole approved external nutrition API; all other planning still works from bundled data.
 
 The Dingdong Maicai checkout control is an explicit integration boundary. It remains disabled until an approved retailer API can create a real cart. Browser code must not contain retailer credentials or claim that a search or deep link populated a cart.
 
@@ -31,7 +32,7 @@ Macro targets and totals use this shape:
 }
 ```
 
-Each ingredient record contains:
+Each ingredient record contains the core fields below. USDA imports also include `source: 'USDA'`, `fdcId`, and `dataType`.
 
 ```js
 {
@@ -64,13 +65,15 @@ These values are product assumptions and must remain covered by tests if changed
 - Never commit secrets or production environment files.
 - Keep `.env.local`, `.env.*.local`, and `.vercel/` ignored.
 - Do not put API keys in browser JavaScript.
+- Read `USDA_API_KEY` only in the serverless function; the browser calls `/api/foods/search`.
+- Validate search length, return only normalized fields, and never log or return the USDA key.
 - Treat local JSON and user-entered text as untrusted input.
 - Prefer safe DOM APIs such as `textContent`; do not render user content with `innerHTML`.
 - Saved meal data remains on the user's device unless the product scope explicitly changes.
 
 ## Dependency policy
 
-The current application has no runtime or development package dependencies. Add one only when its benefit clearly exceeds the maintenance, security, bundle-size, and cost impact. Do not add external services for functionality already supported locally.
+The current application has no runtime or development package dependencies. The USDA integration uses the platform's built-in `fetch`. Add a dependency only when its benefit clearly exceeds the maintenance, security, bundle-size, and cost impact.
 
 ## Verification
 

@@ -2,9 +2,9 @@
 
 ## Product purpose
 
-Precimac is a focused nutrition-planning tool. A user sets macro targets, builds a meal from a curated ingredient dataset, sees live nutrition totals, scales the meal into a grocery plan, and can save the setup in the browser.
+Precimac is a focused nutrition-planning tool. A user sets macro targets, builds a meal from curated or searched USDA ingredients, sees live nutrition totals, scales the meal into a grocery plan, and can save the setup in the browser.
 
-The project should remain useful without accounts, API keys, or third-party services.
+The core project remains useful without accounts or third-party availability. Live food search is an optional enhancement backed by USDA FoodData Central.
 
 ## Product scope
 
@@ -13,6 +13,7 @@ Included:
 - Manual and quick-calculated macro targets
 - A one-question-at-a-time guided calorie calculator
 - A curated local ingredient dataset
+- Live USDA FoodData Central search with one-click meal addition
 - Dietary filters and preparation notes
 - A meal builder with live macro totals and goal indicators
 - Meal, daily, weekly, and monthly grocery quantities
@@ -29,11 +30,10 @@ Not included:
 - Barcode scanning or image recognition
 - User accounts or authentication
 - A hosted database
-- External nutrition APIs
 - Firecrawl or any other web-scraping service
 - Heavy frontend frameworks
 
-The static MVP prepares the complete basket locally. Dingdong Maicai is the only planned retailer integration. Real checkout may only be enabled through its approved API or embedded checkout; it must never be simulated with a search link.
+The MVP prepares the complete basket in the browser. USDA FoodData Central is the approved nutrition data integration; its API key remains server-side. Dingdong Maicai is the only planned retailer integration. Real checkout may only be enabled through its approved API or embedded checkout; it must never be simulated with a search link.
 
 ## Project map
 
@@ -43,12 +43,14 @@ The static MVP prepares the complete basket locally. Dingdong Maicai is the only
 - `macro-engine.js`: pure calculation and validation logic
 - `data/ingredients.json`: bundled ingredient and nutrition data
 - `data/ingredients.js`: browser-ready mirror used for direct-file startup
+- `api/foods/search.js`: server-side USDA search proxy and response normalizer
 - `tests/`: behavior and architecture regression tests
 
 ## Product contracts
 
 - Nutrition targets use calories, protein, carbohydrates, and fats.
 - Ingredient nutrition values are expressed per configured serving size.
+- Imported USDA nutrition values use a 100 g serving and retain the USDA FDC identifier.
 - The interface recalculates totals immediately when a meal changes.
 - Saved meals stay on the current device and browser profile.
 - The core experience must work from the repository's static files when served over HTTP.

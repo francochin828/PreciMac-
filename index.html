@@ -82,6 +82,17 @@
         <div class="ingredient-browser">
           <div class="section-heading"><div><p class="section-number">03 / Build</p><h2 id="builder-title">Build one repeatable meal</h2></div><p id="ingredient-count">Loading…</p></div>
           <p class="section-intro">Precimac generates a starting meal automatically. Add, remove, or adjust any ingredient—the basket updates instantly.</p>
+          <section class="food-search" aria-labelledby="food-search-title">
+            <div class="food-search-heading"><div><p class="section-number">USDA FoodData Central</p><h3 id="food-search-title">Search any food</h3></div><span>Live database</span></div>
+            <label class="food-search-label" for="food-search-input">Food name</label>
+            <div class="food-search-control">
+              <input id="food-search-input" type="search" minlength="2" maxlength="80" autocomplete="off" placeholder="Try chicken breast, rice, avocado…" aria-describedby="food-search-status">
+              <span class="food-search-loader" id="food-search-loader" hidden aria-hidden="true"></span>
+            </div>
+            <p class="food-search-status" id="food-search-status" role="status" aria-live="polite">Type at least 2 characters for live USDA suggestions.</p>
+            <div class="food-search-results" id="food-search-results" aria-label="USDA food suggestions"></div>
+            <p class="food-source">Nutrition source: USDA FoodData Central · values shown per 100 g</p>
+          </section>
           <div class="ingredient-grid" id="ingredient-grid" aria-live="polite" aria-busy="true"></div>
           <div class="empty-message" id="ingredient-empty" hidden>No ingredients match these filters.</div>
         </div>

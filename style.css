@@ -106,7 +106,7 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .field-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .field-grid label, .custom-preference { color: var(--ink); font-size: 0.78rem; font-weight: 800; }
 .field-grid label > span { float: right; color: var(--muted); font-size: 0.68rem; font-weight: 650; text-transform: uppercase; }
-input[type="number"], input[type="text"], input[type="url"], select { width: 100%; min-height: 50px; margin-top: 8px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--background); color: var(--ink); outline: none; }
+input[type="number"], input[type="text"], input[type="url"], input[type="search"], select { width: 100%; min-height: 50px; margin-top: 8px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--background); color: var(--ink); outline: none; }
 input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .form-action-row { display: flex; align-items: center; gap: 20px; margin-top: 20px; }
 .form-action-row p { margin: 0; color: var(--muted); font-size: 0.76rem; line-height: 1.5; }
@@ -125,6 +125,26 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px v
 
 .builder-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.75fr); gap: 24px; margin: 70px 0; }
 .ingredient-browser { min-width: 0; }
+.food-search { margin: 0 0 22px; padding: 20px; border: 1px solid rgba(69, 230, 174, 0.3); border-radius: 14px; background: linear-gradient(145deg, #172333, var(--panel)); }
+.food-search-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+.food-search-heading .section-number { margin-bottom: 5px; }
+.food-search-heading h3 { margin: 0; font-size: 1.35rem; }
+.food-search-heading > span { color: var(--accent-bright); font: 750 0.66rem ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+.food-search-label { display: block; margin-top: 18px; color: var(--muted); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+.food-search-control { position: relative; }
+.food-search-control input { padding-right: 46px; }
+.food-search-loader { position: absolute; top: 24px; right: 16px; width: 18px; height: 18px; border: 2px solid var(--line); border-top-color: var(--accent-bright); border-radius: 50%; animation: search-spin 700ms linear infinite; }
+.food-search-status, .food-source { color: var(--muted); font-size: 0.68rem; line-height: 1.5; }
+.food-search-status { min-height: 20px; margin: 9px 0; }
+.food-source { margin: 12px 0 0; }
+.food-search-results { display: grid; gap: 8px; }
+.food-search-result { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(170px, 0.8fr) auto; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--background); }
+.food-search-identity { display: grid; gap: 3px; min-width: 0; }
+.food-search-identity strong { overflow: hidden; font-size: 0.78rem; text-overflow: ellipsis; white-space: nowrap; }
+.food-search-identity small, .food-search-macros { color: var(--muted); font-size: 0.62rem; }
+.food-search-macros { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.food-search-result .secondary-button { min-height: 38px; padding: 0 14px; font-size: 0.7rem; }
+@keyframes search-spin { to { transform: rotate(360deg); } }
 .ingredient-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .ingredient-card { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); content-visibility: auto; contain-intrinsic-size: auto 210px; }
 .ingredient-category { margin: 0 0 10px; color: var(--accent-bright); font-size: 0.65rem; font-weight: 850; text-transform: uppercase; letter-spacing: 0.12em; }
@@ -224,6 +244,8 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 30px
   h1 { font-size: clamp(3rem, 15vw, 5rem); }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
   .field-grid, .ingredient-grid, .results-grid { grid-template-columns: 1fr; }
+  .food-search-result { grid-template-columns: minmax(0, 1fr) auto; }
+  .food-search-macros { grid-column: 1 / -1; grid-row: 2; }
   .preset-grid { grid-template-columns: 1fr; }
   .preset-card { min-height: 125px; }
   .saved-card { grid-column: auto; }
@@ -235,7 +257,7 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 30px
   .builder-layout, .results-section { margin: 52px 0; }
   .save-form { grid-template-columns: 1fr; }
   .save-form .secondary-button { width: 100%; }
-  input[type="number"], input[type="text"], select { font-size: 1rem; }
+  input[type="number"], input[type="text"], input[type="search"], select { font-size: 1rem; }
   .quantity-controls button { min-width: 44px; height: 44px; }
   footer { flex-direction: column; }
 }

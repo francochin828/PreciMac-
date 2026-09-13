@@ -40,7 +40,7 @@ test('the guided calculator asks only calorie-relevant questions one at a time',
   assert.doesNotMatch(script, /innerHTML/);
 });
 
-test('the app can initialize from a direct file without modules or fetch', async () => {
+test('the app can initialize from a direct file without modules or requiring a network request', async () => {
   const html = await readFile(new URL('index.html', root), 'utf8');
   const script = await readFile(new URL('script.js', root), 'utf8');
   const enginePosition = html.indexOf('src="macro-engine.js"');
@@ -49,7 +49,7 @@ test('the app can initialize from a direct file without modules or fetch', async
 
   assert.ok(enginePosition > 0 && enginePosition < dataPosition && dataPosition < appPosition);
   assert.doesNotMatch(html, /type="module"/);
-  assert.doesNotMatch(script, /\bfetch\s*\(/);
+  assert.match(script, /location\.protocol === 'file:'/);
   assert.match(script, /globalThis\.PrecimacIngredients/);
 });
 
@@ -82,8 +82,12 @@ test('the MVP provides presets, generated baskets, and an honest retailer bounda
   assert.match(script, /buildChineseSearchString/);
 });
 
-test('the static app contains no scraping or external API integration', async () => {
+test('the app contains live USDA search without scraping', async () => {
   const html = await readFile(new URL('index.html', root), 'utf8');
   const script = await readFile(new URL('script.js', root), 'utf8');
-  assert.doesNotMatch(`${html}\n${script}`, /Firecrawl|FIRECRAWL|\/api\//i);
+  assert.match(html, /id="food-search-input"/);
+  assert.match(html, /USDA FoodData Central/);
+  assert.match(script, /\/api\/foods\/search/);
+  assert.match(script, /dataset\.addUsdaFood/);
+  assert.doesNotMatch(`${html}\n${script}`, /Firecrawl|FIRECRAWL/i);
 });

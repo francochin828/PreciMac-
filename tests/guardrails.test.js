@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
@@ -15,20 +15,22 @@ test('the application remains dependency-free', async () => {
   assert.deepEqual(packageJson.devDependencies ?? {}, {});
 });
 
-test('runtime code uses only the bundled ingredient dataset', async () => {
-  const [html, script, engine, ingredientScript] = await Promise.all([
+test('runtime code keeps Firecrawl excluded and uses only the approved USDA API', async () => {
+  const [html, script, engine, ingredientScript, api] = await Promise.all([
     read('index.html'),
     read('script.js'),
     read('macro-engine.js'),
     read('data/ingredients.js'),
+    read('api/foods/search.js'),
   ]);
   const runtime = `${html}\n${script}\n${engine}\n${ingredientScript}`;
 
   assert.match(html, /src="data\/ingredients\.js"/);
   assert.match(ingredientScript, /globalThis\.PrecimacIngredients/);
-  assert.doesNotMatch(runtime, /https?:\/\//i);
   assert.doesNotMatch(runtime, /firecrawl/i);
-  assert.doesNotMatch(runtime, /\/api\//i);
+  assert.match(script, /\/api\/foods\/search/);
+  assert.match(api, /https:\/\/api\.nal\.usda\.gov\/fdc\/v1\/foods\/search/);
+  assert.doesNotMatch(`${runtime}\n${api}`, /api\.firecrawl\.dev/i);
 });
 
 test('browser-ready ingredient data matches the JSON source', async () => {
@@ -58,21 +60,13 @@ test('local secrets and deployment metadata are ignored', async () => {
   assert.match(gitignore, /^\.env\.\*\.local$/m);
   assert.match(gitignore, /^\.vercel\/$/m);
   assert.match(gitignore, /^node_modules\/$/m);
-  assert.doesNotMatch(envExample, /firecrawl|api[_-]?key/i);
+  assert.match(envExample, /^USDA_API_KEY=$/m);
+  assert.doesNotMatch(envExample, /firecrawl/i);
 });
 
-test('there are no serverless API handlers', async () => {
-  let apiEntries = [];
-
-  try {
-    apiEntries = await readdir(new URL('api/', root), {
-      recursive: true,
-      withFileTypes: true,
-    });
-  } catch (error) {
-    assert.equal(error.code, 'ENOENT');
-  }
-
-  const apiFiles = apiEntries.filter((entry) => entry.isFile());
-  assert.deepEqual(apiFiles, []);
+test('USDA credentials remain server-side', async () => {
+  const [script, api] = await Promise.all([read('script.js'), read('api/foods/search.js')]);
+  assert.doesNotMatch(script, /USDA_API_KEY|DEMO_KEY|api\.nal\.usda\.gov/);
+  assert.match(api, /process\.env\.USDA_API_KEY/);
+  assert.match(api, /process\.env\.USDA_API_KEY \|\| 'DEMO_KEY'/);
 });
