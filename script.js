@@ -3,10 +3,13 @@
 
 const {
   TIMEFRAMES,
+  buildBasket,
+  buildChineseSearchString,
   buildShoppingList,
   calculateMealTotals,
   calculateTargets,
   filterIngredients,
+  generateMealPlan,
   normalizeManualTargets,
   normalizeSavedMeals,
   scalePlan
@@ -31,6 +34,8 @@ const elements = {
   goalContext: document.querySelector('#goal-context'),
   shoppingTimeframe: document.querySelector('#shopping-timeframe'),
   shoppingList: document.querySelector('#shopping-list'),
+  basketItems: document.querySelector('#basket-items'),
+  basketCount: document.querySelector('#basket-count'),
   copyList: document.querySelector('#copy-list'),
   copyStatus: document.querySelector('#copy-status'),
   saveMealForm: document.querySelector('#save-meal-form'),
@@ -47,8 +52,15 @@ const state = {
   targetMode: 'manual',
   timeframe: 'day',
   filters: { dairyFree: false, porkFree: false, vegetarian: false, highProtein: false },
-  saved: []
+  saved: [],
+  checkedBasketItems: new Set()
 };
+
+const PRESETS = Object.freeze({
+  cut: { calories: 1800, protein: 180, carbs: 150, fats: 53 },
+  maintain: { calories: 2310, protein: 180, carbs: 240, fats: 70 },
+  bulk: { calories: 3000, protein: 200, carbs: 350, fats: 89 }
+});
 
 function setStatus(message, type = '') {
   elements.appStatus.textContent = message;
@@ -177,16 +189,53 @@ function renderShoppingList(items) {
   elements.goalContext.textContent = `${timeframe.label} plan`;
   if (!items.length) {
     elements.shoppingList.textContent = 'Add ingredients to generate your list.';
+    elements.basketItems.replaceChildren(makeElement('p', 'empty-message', 'Generate a plan to build your basket.'));
+    elements.basketCount.textContent = '0 products';
     elements.copyList.disabled = true;
     return;
   }
-  elements.shoppingList.textContent = buildShoppingList({
-    items,
-    ingredients: state.ingredients,
-    timeframeKey: state.timeframe,
-    preference: elements.customPreference.value
+  const basket = buildBasket({ items, ingredients: state.ingredients, timeframeKey: state.timeframe });
+  const basketRows = basket.map((item) => {
+    const label = makeElement('label', 'basket-row');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.dataset.basketItem = item.id;
+    checkbox.checked = state.checkedBasketItems.has(item.id);
+    const name = makeElement('span');
+    name.append(makeElement('strong', '', item.nameZh), makeElement('small', '', item.name));
+    const quantity = makeElement('output', '', item.grams >= 1000 ? `${displayNumber(item.grams / 1000)} kg` : `${item.grams} g`);
+    label.append(checkbox, name, quantity);
+    return label;
   });
+  elements.basketItems.replaceChildren(...basketRows);
+  elements.basketCount.textContent = `${basket.length} product${basket.length === 1 ? '' : 's'}`;
+  const chineseList = buildChineseSearchString(basket);
+  const note = elements.customPreference.value.trim();
+  elements.shoppingList.textContent = note ? `${chineseList}\n备注：${note}` : chineseList;
   elements.copyList.disabled = false;
+}
+
+function generatePlan({ announce = true } = {}) {
+  const items = generateMealPlan({ ingredients: state.ingredients, targets: state.targets, filters: state.filters });
+  state.selected = new Map(items.map((item) => [item.id, item.quantity]));
+  state.checkedBasketItems.clear();
+  renderIngredients();
+  renderPlan();
+  if (announce) {
+    setStatus(`Plan generated from your targets: ${items.length} ingredients, ready to edit.`, 'success');
+    document.querySelector('#builder-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function applyPreset(key) {
+  const preset = PRESETS[key];
+  if (!preset) return;
+  state.targets = { ...preset };
+  MACROS.forEach((macro) => { document.querySelector(`#manual-${macro}`).value = preset[macro]; });
+  document.querySelector('input[name="target-mode"][value="manual"]').checked = true;
+  applyTargetMode('manual');
+  document.querySelectorAll('[data-preset]').forEach((button) => button.dataset.active = button.dataset.preset === key ? 'true' : 'false');
+  generatePlan();
 }
 
 function renderPlan() {
@@ -248,7 +297,7 @@ function applyTargets(event) {
       document.querySelector('#manual-calories').value = state.targets.calories;
     }
     setStatus(`Targets applied: ${state.targets.calories} kcal · ${state.targets.protein} g protein · ${state.targets.carbs} g carbs · ${state.targets.fats} g fats.`, 'success');
-    renderPlan();
+    generatePlan();
   } catch (error) {
     setStatus(error.message, 'error');
   }
@@ -312,10 +361,15 @@ async function copyShoppingList() {
 }
 
 function bindEvents() {
+  document.querySelectorAll('[data-preset]').forEach((button) => button.addEventListener('click', () => applyPreset(button.dataset.preset)));
   document.querySelectorAll('input[name="target-mode"]').forEach((input) => input.addEventListener('change', () => applyTargetMode(input.value)));
   elements.macroForm.addEventListener('submit', applyTargets);
   document.querySelectorAll('input[name="timeframe"]').forEach((input) => input.addEventListener('change', () => { state.timeframe = input.value; renderPlan(); }));
-  document.querySelectorAll('input[name="diet-filter"]').forEach((input) => input.addEventListener('change', () => { state.filters[input.value] = input.checked; renderIngredients(); }));
+  document.querySelectorAll('input[name="diet-filter"]').forEach((input) => input.addEventListener('change', () => {
+    state.filters[input.value] = input.checked;
+    generatePlan({ announce: false });
+    setStatus('Dietary filters applied. Your meal and basket were regenerated.', 'success');
+  }));
   elements.customPreference.addEventListener('input', () => renderShoppingList(selectedArray()));
   elements.ingredientGrid.addEventListener('click', (event) => { const id = event.target.closest('[data-add-ingredient]')?.dataset.addIngredient; if (id) addIngredient(id); });
   elements.selectedItems.addEventListener('click', (event) => {
@@ -325,6 +379,12 @@ function bindEvents() {
     if (stepButton) changeQuantity(stepButton.dataset.ingredientId, Number(stepButton.dataset.quantityStep));
   });
   elements.copyList.addEventListener('click', copyShoppingList);
+  elements.basketItems.addEventListener('change', (event) => {
+    const id = event.target.closest('[data-basket-item]')?.dataset.basketItem;
+    if (!id) return;
+    if (event.target.checked) state.checkedBasketItems.add(id);
+    else state.checkedBasketItems.delete(id);
+  });
   elements.saveMealForm.addEventListener('submit', saveMeal);
   elements.savedMeals.addEventListener('click', (event) => { const id = event.target.closest('[data-load-meal]')?.dataset.loadMeal; if (id) loadMeal(id); });
 }
@@ -338,8 +398,8 @@ function initialize() {
     if (!Array.isArray(ingredients) || ingredients.length === 0) throw new Error('Ingredient data is empty.');
     state.ingredients = ingredients;
     renderIngredients();
-    renderPlan();
-    setStatus(`${ingredients.length} local ingredients ready. Calculations stay on this device.`, 'success');
+    generatePlan({ announce: false });
+    setStatus(`${ingredients.length} local ingredients ready. Your starter basket has been generated.`, 'success');
   } catch (error) {
     elements.ingredientCount.textContent = 'Unavailable';
     elements.ingredientGrid.setAttribute('aria-busy', 'false');

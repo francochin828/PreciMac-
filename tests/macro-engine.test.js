@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 await import('../macro-engine.js');
-const { buildShoppingList, calculateMealTotals, calculateTargets, filterIngredients, normalizeManualTargets, normalizeSavedMeals, scalePlan } = globalThis.PrecimacEngine;
+const { buildBasket, buildChineseSearchString, buildShoppingList, calculateMealTotals, calculateTargets, filterIngredients, generateMealPlan, normalizeManualTargets, normalizeSavedMeals, scalePlan } = globalThis.PrecimacEngine;
 
 const ingredients = JSON.parse(await readFile(new URL('../data/ingredients.json', import.meta.url), 'utf8'));
 
@@ -68,4 +68,22 @@ test('saved meal normalization drops malformed browser data safely', () => {
     timeframe: 'day',
     preference: ''
   }]);
+});
+
+test('macro targets generate a non-empty editable meal close to the daily goal', () => {
+  const targets = { calories: 2310, protein: 180, carbs: 240, fats: 70 };
+  const plan = generateMealPlan({ ingredients, targets });
+  const daily = scalePlan(calculateMealTotals(plan, ingredients), targets, 'day').planned;
+
+  assert.ok(plan.length >= 3);
+  assert.ok(Math.abs(daily.calories - targets.calories) / targets.calories < 0.1);
+  assert.ok(Math.abs(daily.protein - targets.protein) / targets.protein < 0.1);
+  assert.ok(Math.abs(daily.carbs - targets.carbs) / targets.carbs < 0.1);
+  assert.ok(Math.abs(daily.fats - targets.fats) / targets.fats < 0.12);
+});
+
+test('basket scales quantities and produces a Chinese retailer query', () => {
+  const basket = buildBasket({ items: [{ id: 'chicken-breast', quantity: 1 }], ingredients, timeframeKey: 'week' });
+  assert.deepEqual(basket, [{ id: 'chicken-breast', name: 'Chicken breast', nameZh: '鸡胸肉', grams: 3360, checked: false }]);
+  assert.equal(buildChineseSearchString(basket), '鸡胸肉 3.4kg');
 });

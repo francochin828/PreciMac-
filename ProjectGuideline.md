@@ -17,16 +17,22 @@ Included:
 - Meal, daily, weekly, and monthly grocery quantities
 - Clipboard export
 - Saved meals stored in the user's browser
+- Automatic meal generation from macro targets
+- Chinese-language, editable grocery baskets
+- A single-retailer checkout adapter boundary
 
 Not included:
 
-- Delivery-service scraping or ordering
+- Delivery-service scraping
+- Fake checkout through search links or private app routes
 - Barcode scanning or image recognition
 - User accounts or authentication
 - A hosted database
 - External nutrition APIs
 - Firecrawl or any other web-scraping service
 - Heavy frontend frameworks
+
+The static MVP prepares the complete basket locally. Real retailer checkout may only be enabled through an approved retailer API or embedded checkout; it must never be simulated with a search link.
 
 ## Project map
 

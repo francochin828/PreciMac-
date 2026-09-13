@@ -122,12 +122,85 @@ function buildShoppingList({ items, ingredients, timeframeKey, preference = '' }
   return lines.join('\n');
 }
 
+function scoreMeal(totals, target) {
+  const weights = { calories: 1.2, protein: 1.5, carbs: 1, fats: 1 };
+  return Object.keys(weights).reduce((score, macro) => {
+    const baseline = Math.max(Number(target[macro]) || 0, 1);
+    const difference = (Number(totals[macro]) - baseline) / baseline;
+    return score + weights[macro] * difference ** 2;
+  }, 0);
+}
+
+function generateMealPlan({ ingredients, targets, filters = {} }) {
+  const candidates = filterIngredients(ingredients, filters);
+  if (!candidates.length) return [];
+
+  const mealTarget = Object.fromEntries(
+    Object.entries(targets).map(([macro, value]) => [macro, Number(value) / TIMEFRAMES.day.mealRepeats])
+  );
+  const selected = new Map();
+  let totals = calculateMealTotals([], candidates);
+  let bestScore = scoreMeal(totals, mealTarget);
+
+  for (let iteration = 0; iteration < 32; iteration += 1) {
+    let bestMove = null;
+    candidates.forEach((ingredient) => {
+      const current = selected.get(ingredient.id) || 0;
+      [-0.5, 0.5].forEach((step) => {
+        const next = round(current + step, 1);
+        if (next < 0 || next > 4) return;
+        const trial = new Map(selected);
+        if (next === 0) trial.delete(ingredient.id);
+        else trial.set(ingredient.id, next);
+        const items = [...trial].map(([id, quantity]) => ({ id, quantity }));
+        const trialTotals = calculateMealTotals(items, candidates);
+        const varietyPenalty = Math.max(0, trial.size - 5) * 0.015;
+        const trialScore = scoreMeal(trialTotals, mealTarget) + varietyPenalty;
+        if (trialScore + 1e-9 < bestScore && (!bestMove || trialScore < bestMove.score)) {
+          bestMove = { id: ingredient.id, quantity: next, totals: trialTotals, score: trialScore };
+        }
+      });
+    });
+    if (!bestMove) break;
+    if (bestMove.quantity === 0) selected.delete(bestMove.id);
+    else selected.set(bestMove.id, bestMove.quantity);
+    totals = bestMove.totals;
+    bestScore = bestMove.score;
+  }
+
+  return [...selected].map(([id, quantity]) => ({ id, quantity }));
+}
+
+function buildBasket({ items, ingredients, timeframeKey }) {
+  const timeframe = TIMEFRAMES[timeframeKey] || TIMEFRAMES.day;
+  const lookup = new Map(ingredients.map((ingredient) => [ingredient.id, ingredient]));
+  return items.flatMap(({ id, quantity }) => {
+    const ingredient = lookup.get(id);
+    if (!ingredient) return [];
+    const grams = round(Number(quantity) * timeframe.mealRepeats * ingredient.servingGrams);
+    return [{
+      id,
+      name: ingredient.name,
+      nameZh: ingredient.nameZh || ingredient.name,
+      grams,
+      checked: false
+    }];
+  });
+}
+
+function buildChineseSearchString(basket) {
+  return basket.map((item) => `${item.nameZh} ${item.grams >= 1000 ? `${round(item.grams / 1000, 1)}kg` : `${item.grams}g`}`).join('，');
+}
+
 globalThis.PrecimacEngine = Object.freeze({
   TIMEFRAMES,
+  buildBasket,
+  buildChineseSearchString,
   buildShoppingList,
   calculateMealTotals,
   calculateTargets,
   filterIngredients,
+  generateMealPlan,
   normalizeManualTargets,
   normalizeSavedMeals,
   scalePlan

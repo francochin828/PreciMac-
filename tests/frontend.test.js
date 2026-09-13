@@ -54,10 +54,19 @@ test('the interface provides responsive, accessible, reduced-motion styling', as
   assert.match(css, /min-width: 44px/);
 });
 
-test('Phase 3 reports the completed local-first release', async () => {
+test('the footer reports the active MVP release', async () => {
   const html = await readFile(new URL('index.html', root), 'utf8');
-  assert.match(html, /All phases complete · Local-first build/);
-  assert.doesNotMatch(html, /Phase 1 · Local-first build/);
+  assert.match(html, /MVP · Local-first nutrition and basket engine/);
+});
+
+test('the MVP provides presets, generated baskets, and an honest retailer boundary', async () => {
+  const html = await readFile(new URL('index.html', root), 'utf8');
+  const script = await readFile(new URL('script.js', root), 'utf8');
+  assert.match(html, /data-preset="cut"/);
+  assert.match(html, /id="basket-items"/);
+  assert.match(html, /id="retailer-checkout"[^>]*disabled/);
+  assert.match(script, /generateMealPlan/);
+  assert.match(script, /buildChineseSearchString/);
 });
 
 test('the static app contains no scraping or external API integration', async () => {

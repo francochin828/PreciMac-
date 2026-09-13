@@ -6,13 +6,15 @@ Precimac is a static, local-first web application:
 
 - HTML for document structure
 - CSS for presentation
-- Vanilla JavaScript modules for behavior
+- Ordered vanilla JavaScript files for behavior and direct-file compatibility
 - A bundled JSON file for ingredient data
 - A browser-ready local mirror so direct-file use requires no network fetch
 - `localStorage` for saved meals
 - Static hosting on Vercel
 
 Firecrawl is intentionally excluded. The application does not need live scraping, a backend, authentication, a database, or an external nutrition API for its current scope.
+
+The retailer checkout control is an explicit integration boundary. It remains disabled until an approved retailer API can create a real cart. Browser code must not contain retailer credentials or claim that a search or deep link populated a cart.
 
 ## Stable data contracts
 
@@ -33,6 +35,7 @@ Each ingredient record contains:
 {
   id: string,
   name: string,
+  nameZh: string,
   category: string,
   servingGrams: number,
   calories: number,

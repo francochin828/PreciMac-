@@ -21,11 +21,20 @@
 
     <main id="main-content" tabindex="-1">
       <section class="hero" aria-labelledby="page-title">
-        <div><p class="eyebrow">High precision nutrition engine</p><h1 id="page-title">Hit your numbers.<br><em>Own your prep.</em></h1><p class="hero-copy">Set exact targets, build a repeatable meal from a fast local dataset, and turn it into a shopping list in seconds.</p></div>
-        <div class="hero-readout" aria-label="Product capabilities"><span>01</span><p>Set targets</p><span>02</span><p>Build your meal</p><span>03</span><p>Copy your list</p></div>
+        <div><p class="eyebrow">High precision nutrition engine</p><h1 id="page-title">Macros in.<br><em>Basket out.</em></h1><p class="hero-copy">Choose a goal and Precimac builds a repeatable meal, calculates exact grocery quantities, and prepares a checkout-ready basket.</p></div>
+        <div class="hero-readout" aria-label="Product capabilities"><span>01</span><p>Set targets</p><span>02</span><p>Generate your meal</p><span>03</span><p>Review your basket</p></div>
       </section>
 
       <div class="app-status" id="app-status" role="status" aria-live="polite" aria-atomic="true">Loading the local ingredient dataset…</div>
+
+      <section class="preset-section" aria-labelledby="presets-title">
+        <div class="section-heading compact-heading"><div><p class="section-number">Start fast</p><h2 id="presets-title">Choose a proven target</h2></div><p>One tap · fully editable</p></div>
+        <div class="preset-grid">
+          <button class="preset-card" type="button" data-preset="cut"><span>🔥 High protein</span><strong>Clean cut</strong><small>1,800 kcal · 180P · 150C · 53F</small></button>
+          <button class="preset-card" type="button" data-preset="maintain" data-active="true"><span>⚡ Everyday</span><strong>Performance</strong><small>2,310 kcal · 180P · 240C · 70F</small></button>
+          <button class="preset-card" type="button" data-preset="bulk"><span>💪 High energy</span><strong>Clean bulk</strong><small>3,000 kcal · 200P · 350C · 89F</small></button>
+        </div>
+      </section>
 
       <section class="panel target-panel" aria-labelledby="targets-title">
         <div class="section-heading"><div><p class="section-number">01 / Targets</p><h2 id="targets-title">Set your macro target</h2></div><p>Daily baseline</p></div>
@@ -48,7 +57,7 @@
             <label>Age <span>years</span><input id="calc-age" name="age" type="number" min="16" max="100" step="1" value="30" required></label>
             <label>Goal <span>direction</span><select id="calc-goal" name="goal"><option value="cut">Cut</option><option value="maintain" selected>Maintain</option><option value="bulk">Bulk</option></select></label>
           </fieldset>
-          <div class="form-action-row"><button class="primary-button" type="submit">Apply targets</button><p id="target-method-note">Using the exact daily targets you enter.</p></div>
+          <div class="form-action-row"><button class="primary-button" type="submit">Generate my plan</button><p id="target-method-note">Using the exact daily targets you enter.</p></div>
         </form>
       </section>
 
@@ -68,7 +77,7 @@
       <section class="builder-layout" aria-labelledby="builder-title">
         <div class="ingredient-browser">
           <div class="section-heading"><div><p class="section-number">03 / Build</p><h2 id="builder-title">Build one repeatable meal</h2></div><p id="ingredient-count">Loading…</p></div>
-          <p class="section-intro">Each quantity is one listed serving. Your chosen meal repeats across the selected timeframe.</p>
+          <p class="section-intro">Precimac generates a starting meal automatically. Add, remove, or adjust any ingredient—the basket updates instantly.</p>
           <div class="ingredient-grid" id="ingredient-grid" aria-live="polite" aria-busy="true"></div>
           <div class="empty-message" id="ingredient-empty" hidden>No ingredients match these filters.</div>
         </div>
@@ -91,14 +100,15 @@
       </section>
 
       <section class="results-section" aria-labelledby="results-title">
-        <div class="section-heading"><div><p class="section-number">04 / Output</p><h2 id="results-title">Your Precimac list</h2></div><p>Plain text · ready to shop</p></div>
+        <div class="section-heading"><div><p class="section-number">04 / Basket</p><h2 id="results-title">Your grocery basket</h2></div><p id="basket-count">0 products</p></div>
         <div class="results-grid">
-          <article class="shopping-card"><div class="card-heading"><h3>Shopping list</h3><span id="shopping-timeframe">1 day</span></div><pre id="shopping-list" tabindex="0">Add ingredients to generate your list.</pre><button class="primary-button" id="copy-list" type="button" disabled>Copy shopping list</button><p class="action-status" id="copy-status" role="status" aria-live="polite"></p></article>
+          <article class="shopping-card"><div class="card-heading"><h3>Review products</h3><span id="shopping-timeframe">1 day</span></div><div id="basket-items" class="basket-items"><p class="empty-message">Generate a plan to build your basket.</p></div><details class="plain-list"><summary>View copy-ready Chinese list</summary><pre id="shopping-list" tabindex="0">Add ingredients to generate your list.</pre></details><button class="secondary-button" id="copy-list" type="button" disabled>Copy Chinese list</button><p class="action-status" id="copy-status" role="status" aria-live="polite"></p></article>
+          <article class="checkout-card"><div class="card-heading"><h3>Retail checkout</h3><span>Integration boundary</span></div><div class="retailer-lock"><span class="retailer-logo">叮</span><div><strong>Dingdong Maicai</strong><p>The basket is ready. Automatic external cart creation activates when retailer partner credentials are connected.</p></div></div><button class="primary-button" id="retailer-checkout" type="button" disabled>Connect retailer to checkout</button><p class="action-status">No search-link workaround. Precimac will only call this checkout when it can create the real cart.</p></article>
           <article class="saved-card"><div class="card-heading"><h3>Saved meals</h3><span>On this device</span></div><form id="save-meal-form" class="save-form"><label for="meal-name" class="sr-only">Meal name</label><input id="meal-name" type="text" maxlength="48" placeholder="Name this meal" required><button class="secondary-button" type="submit">Save meal</button></form><p class="action-status" id="save-status" role="status" aria-live="polite"></p><div id="saved-meals" class="saved-meals"></div><p class="empty-message" id="saved-empty">No saved meals yet.</p></article>
         </div>
       </section>
 
     </main>
-    <footer><span>Precimac 精点</span><span>All phases complete · Local-first build</span></footer>
+    <footer><span>Precimac 精点</span><span>MVP · Local-first nutrition and basket engine</span></footer>
   </body>
 </html>
